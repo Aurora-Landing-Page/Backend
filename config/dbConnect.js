@@ -14,7 +14,6 @@ const connectDb = async () => {
     // If connection is sucessful, log connection details
     console.log(
       "\nMongoDb Connected: ",
-      connect.connection.host, // Host
       connect.connection.name // Name of Database
     );
     return true;
