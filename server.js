@@ -1,4 +1,5 @@
 // Imported Required Frameworks And Modules and created Express App Instance
+require("dotenv").config();
 const express = require("express");
 const app = express();
 const connectDb = require("./config/dbConnect");
