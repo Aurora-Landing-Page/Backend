@@ -1,20 +1,27 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
 
-
 var transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtpout.secureserver.net",
+  secure: true,
+  secureConnection: false, // TLS requires secureConnection to be false
+  tls: {
+    ciphers: "SSLv3",
+  },
+  requireTLS: true,
+  port: 465,
+  debug: true,
   auth: {
     user: process.env.EMAIL,
     pass: process.env.EMAIL_PASSWORD,
   },
 });
 const sendMail = async (req, res) => {
-  const { name, email} = req.body;
+  const { name, email } = req.body;
   var mailOptions = {
     from: process.env.EMAIL,
     to: email,
-    subject: 'Aurora 2024: Registration Done Successfully',
+    subject: "Aurora 2024: Registration Done Successfully",
     html: `<html lang="en">
     <head>
       <meta charset="UTF-8">
@@ -351,6 +358,6 @@ const sendMail = async (req, res) => {
     });
   });
   res.status(200).send({ message: "Mail sent!" });
-}
+};
 
-module.exports = { sendMail}
+module.exports = { sendMail };
