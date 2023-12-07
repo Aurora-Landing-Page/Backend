@@ -126,24 +126,11 @@ const sendMail = async (req, res) => {
                                                                                                     <p>Greetings! Get ready to witness the spectacular dawn of excitement as IIITM Gwalior proudly presents <strong>"Aurora"</strong> — a mesmerizing journey into the heart of creativity, culture, and celebration, here's a sneak peek to ignite your anticipation!</p>
                                                                                                     <p><strong>We are happy to have you as a registered participant, and we can't wait to make this event one you will never forget.</strong></p>
                                                                                                     
-                                                                                                    <p>We're delighted to announce that <strong>Early Registration Discounts</strong> on tickets will be available soon as a special offer for our early registrants <strong>(registrations that are done till 20th December 2023)</strong>. Take advantage of this opportunity to reserve your spot at a reduced price.</p>
+                                                                                                    <p>We're delighted to announce that <strong>Early Registration Discounts</strong> on tickets will be available soon as a special offer for our early registrants <strong>(registrations that are done till 25th December 2023)</strong>. Take advantage of this opportunity to reserve your spot at a reduced price.</p>
                                                                                                     <p>As you are <strong>Eligible</strong>, remember your credentials to avail discounts on Tickets.</p>
-                                                                                                    <p>More information will be emailed out soon along with a comprehensive itinerary of the event's events and sessions. Keep an eye on your inbox for any updates or changes.</p>
-                                                                                                    <p>If you have any questions or concerns leading up to the event, feel free to reach out to our dedicated support team at support@aurorafest.in</p>
-                                                                                                    <tr
-                                                                                                        style="border-collapse:collapse">
-                                                                                                        <td align="center"
-                                                                                                            style="padding:0;Margin:0;padding-bottom:10px">
-                                                                                
-                                                                                                            <p style="text-align: left; margin: 0px; font-size: 14px; font-family: helvetica, &quot;helvetica neue&quot;, arial, verdana, sans-serif; line-height: 21px; color: rgb(4, 4, 4); --darkreader-inline-color: #e5e3e0;"
-                                                                                                                data-darkreader-inline-color="">
-                                                                                                                <br></p>
-                                                                                                            
-
-                                                                                                                <br>
-                                                                                                            </p>
-                                                                                                        </td>
-                                                                                                    </tr>
+                                                                                                    <p>More information will be emailed out soon along with a comprehensive itinerary of the events and sessions. Keep an eye on your inbox for any updates or changes.</p>
+                                                                                                    <p>If you have any questions or concerns leading up to the fest, feel free to reach out to our dedicated support team at support@aurorafest.in</p>
+                                                                                                    
                                                                                                 </tbody>
                                                                                             </table>
                                                                                         </td>
