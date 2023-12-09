@@ -2,6 +2,14 @@ const asyncHandler = require("express-async-handler");
 const User = require("../models/registerModel");
 const CA = require("../models/caModel");
 const bcryptjs =  require('bcryptjs');
+const jwt = require("jsonwebtoken");
+
+// Import environment variables
+const dotenv = require("dotenv");
+dotenv.config();
+
+// JWT cookie persists for 1 day (value below is in ms)
+const maxAge = 1 * 24 * 60 * 60 * 1000;
 
 const registerUser = asyncHandler(async (req, res, next) => {
   const { name, email, phone, gender, college,city,dob, password, confirm_password } = req.body;
@@ -125,4 +133,50 @@ const registerCa = asyncHandler(async (req, res, next) => {
   }
 });
 
-module.exports = { registerUser, registerCa };
+// Actually responsible for creating the token
+function createToken(id) {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+      expiresIn: maxAge
+  })
+}
+
+// For generating the JWT and storing it in a cookie
+const loginCa = asyncHandler(async (req, res) => {
+  const { email, password } = req.body
+  try {
+    const user = await CA.login(email, password)
+    const token = createToken(user._id)
+    res.cookie('jwt', token, { httpOnly: true, maxAge: maxAge })  
+    res.cookie('name', user.username, { maxAge: maxAge }) 
+    res.status(200).json({ userId: user._id })
+  } catch (err) {
+    console.error(`Error occured, stack trace: \n ${ err.stack }`);
+    res.status(500).json({ 
+      title:"Server Error",
+      message: err.message
+    })
+  }
+})
+
+const logoutCa = asyncHandler(async (req, res) => {
+  res.cookie('jwt', '', { maxAge: 1 })
+  res.cookie('name', '', { maxAge: 1 })
+  res.status(200).json({ "message": "Logged out!" })
+})
+
+const loginTest = asyncHandler(async (req, res, next) => {
+  const token = req.cookies.jwt
+  try {
+      if (token) {
+          jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+              if (err) { res.status(400).json({ "errors": {"message": "Invalid JWT"} }) } 
+              else { res.status(200).json({ "decoded": decoded }) }
+          })
+      } else { res.status(400).json({ "errors": {"message": "JWT does not exist, please login first"} }) }
+  } catch (error) {
+      console.error(error)
+      res.status(500).json({ "errors": {"message": "JWT does not exist, please login first"} })
+  }
+});
+
+module.exports = { registerUser, registerCa, loginCa, logoutCa, loginTest };
