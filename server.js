@@ -1,6 +1,7 @@
 // Imported Required Frameworks And Modules and created Express App Instance
 require("dotenv").config();
 const express = require("express");
+const cookies = require("cookie-parser");
 const app = express();
 const connectDb = require("./config/dbConnect");
 const userRoutes = require("./routes/userRoute");
@@ -38,6 +39,9 @@ app.use(cors());
 
 // Middleware for parsing incoming JSON data
 app.use(express.json());
+
+// Middleware for parsing cookies
+app.use(cookies());
 
 // Middleware to log information about incoming requests
 app.use((req, res, next) => {

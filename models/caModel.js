@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 const validator = require("validator");
 
-const userSchema = mongoose.Schema(
+const caSchema = mongoose.Schema(
   {
     name: {
       type: String,
@@ -43,8 +44,32 @@ const userSchema = mongoose.Schema(
       type: Date,
       required: [true, "please enter you dob"],
     },
+    referralCode: {
+      type: String,
+      required: [true, "please add referral code"],
+    },
+    referralCount: {
+      type: Number,
+    },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Register", userSchema);
+caSchema.statics.login = async function (email, password) {
+  const user = await this.findOne({ email })
+
+  try {
+    if (user) {
+      const auth = await bcrypt.compare(password, user.password)
+      if (auth) {
+          return user
+      } 
+      throw new Error("Invalid password")
+    }
+    throw new Error("User does not exist")
+  } catch (error) {
+    throw error
+  }
+}
+
+module.exports = mongoose.model("CA", caSchema);
