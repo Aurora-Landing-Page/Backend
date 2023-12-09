@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
 
-const userSchema = mongoose.Schema(
+const caSchema = mongoose.Schema(
   {
     name: {
       type: String,
@@ -43,8 +43,15 @@ const userSchema = mongoose.Schema(
       type: Date,
       required: [true, "please enter you dob"],
     },
+    referralCode: {
+      type: String,
+      required: [true, "please add referral code"],
+    },
+    referralCount: {
+      type: Number,
+    },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Register", userSchema);
+module.exports = mongoose.model("CA", caSchema);
