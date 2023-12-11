@@ -12,8 +12,8 @@ router.post("/ca", userController.registerCa);
 router.post("/loginCa", userController.loginCa);
 router.post("/logoutCa", userController.logoutCa);
 
-//To test login functionality
-router.get("/whatever", requireAuth, userController.loginTest);
+// To get all the users who have signed up using the CA's referral code
+router.get("/getCaData", requireAuth, userController.getCaData);
 
 // Exporting Router
 module.exports = router;

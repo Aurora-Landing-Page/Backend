@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
+const bcrypt = require("bcryptjs");
 
 const userSchema = mongoose.Schema(
   {
@@ -19,26 +20,32 @@ const userSchema = mongoose.Schema(
         message: "Please enter a valid Email",
       },
     },
+    
     phone: {
       type: Number,
       required: [true, "please enter you phone number"],
       unique: [true, "phone number already taken"],
     },
+    
     gender: {
       type: String,
       required: [true, "please enter you gender"],
     },
+    
     college: {
       type: String,
     },
+    
     city: {
       type: String,
       required: [true, "please enter you city"],
     },
+    
     password: {
       type: String,
       required: [true, "please enter you password"],
     },
+
     dob: {
       type: Date,
       required: [true, "please enter you dob"],

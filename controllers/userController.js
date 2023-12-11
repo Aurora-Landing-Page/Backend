@@ -1,7 +1,9 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/registerModel");
-const CA = require("../models/caModel");
-const bcryptjs =  require('bcryptjs');
+const schema = require("../models/caModel");
+const CA = schema.CA;
+const minUser = schema.minUser;
+const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 // Import environment variables
@@ -12,9 +14,9 @@ dotenv.config();
 const maxAge = 1 * 24 * 60 * 60 * 1000;
 
 const registerUser = asyncHandler(async (req, res, next) => {
-  const { name, email, phone, gender, college,city,dob, password, confirm_password } = req.body;
-  
-  if (!name || !email || !phone || !gender || !college || !city || !password || !confirm_password || !dob) {
+  const { name, email, phone, gender, college, city, dob, password, referralCode } = req.body;
+
+  if (!name || !email || !phone || !gender || !college || !city || !password || !dob) {
     return res.status(400).json({ error: "All fields are necessary" });
   }
 
@@ -31,10 +33,22 @@ const registerUser = asyncHandler(async (req, res, next) => {
       return res.status(400).json({ error: "Phone number already taken" });
     }
 
-    if (password !== confirm_password) {
-      return res.status(400).json({ error: "Password didn't match" });
-    }     
+    if (referralCode) {
+      const CAdoc = await CA.findOne({ referralCode })
 
+      if (!CAdoc) { return res.status(400).json({ error: "Invalid referral code" }) }
+      else {
+        const referral = new minUser({
+          name,
+          email,
+          phone,
+          college
+        })
+
+        CAdoc.referrals.push(referral)
+        await CAdoc.save()
+      }
+    }
 
     const hashedPassword = bcryptjs.hashSync(password,10);
     const newUser = new User({
@@ -50,13 +64,10 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
     try {
       await newUser.save();
-     res.status(200).json("user saved successfully");
-     console.log(`User created: ${newUser}`);
-     } catch(err) {
-        next(err);
-     }
-
-    
+      res.status(200).json({ "message": "User saved successfully" });
+    } catch (err) {
+      next(err);
+    }
   } catch (error) {
     console.error(error);
     return next(error);
@@ -83,8 +94,6 @@ const registerCa = asyncHandler(async (req, res, next) => {
       return res.status(400).json({ error: "Phone number already taken" });
     }     
 
-    const hashedPassword = bcryptjs.hashSync(password,10);
-
     const generateReferralCode = () => {
       const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let referralCode = '';
@@ -102,9 +111,8 @@ const registerCa = asyncHandler(async (req, res, next) => {
     if (checkReferralCode) {
       referralCode = generateReferralCode();
     }
-    
-    console.log(referralCode);
-    
+
+    const hashedPassword = bcryptjs.hashSync(password,10);
     const newCa = new CA({
       name,
       email,
@@ -114,19 +122,28 @@ const registerCa = asyncHandler(async (req, res, next) => {
       city,
       password: hashedPassword,
       dob,
-      referralCode: referralCode,
-      referralCount: 0,
+      referralCode: referralCode
     });
 
     try {
       await newCa.save();
-     res.status(200).json("CA saved successfully");
-     console.log(`CA created: ${newCa}`);
-     } catch(err) {
-        next(err);
-     }
-
-    
+      res.status(200).json({ 
+        "message": "CA saved successfully", 
+        "CA": {
+          "name": name,
+          "email": email,
+          "phone": phone,
+          "gender": gender,
+          "college": college,
+          "city": city,
+          "dob": dob,
+          "referralCode": referralCode
+        } 
+      });
+    } catch (err) {
+      console.error(err)
+      next(err);
+    }
   } catch (error) {
     console.error(error);
     return next(error);
@@ -147,12 +164,11 @@ const loginCa = asyncHandler(async (req, res) => {
     const user = await CA.login(email, password)
     const token = createToken(user._id)
     res.cookie('jwt', token, { httpOnly: true, maxAge: maxAge })  
-    res.cookie('name', user.username, { maxAge: maxAge }) 
+    res.cookie('name', user.name, { maxAge: maxAge }) 
     res.status(200).json({ userId: user._id })
   } catch (err) {
-    console.error(`Error occured, stack trace: \n ${ err.stack }`);
-    res.status(500).json({ 
-      title:"Server Error",
+    res.status(400).json({ 
+      title:"Invalid Request",
       message: err.message
     })
   }
@@ -179,4 +195,35 @@ const loginTest = asyncHandler(async (req, res, next) => {
   }
 });
 
-module.exports = { registerUser, registerCa, loginCa, logoutCa, loginTest };
+const getCaData = asyncHandler(async (req, res) => {
+  const token = req.cookies.jwt
+  let id
+
+  try {
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) { res.status(400).json({ "errors": {"message": "Invalid JWT"} }) } 
+      else { const id = decoded.id }
+    })
+
+    const CAdoc = await CA.findOne({ id })
+    const object = {
+      name: CAdoc.name,
+      email: CAdoc.email,
+      phone: CAdoc.phone,
+      gender: CAdoc.gender,
+      college: CAdoc.college,
+      city: CAdoc.city,
+      dob: CAdoc.dob,
+      referralCode: CAdoc.referralCode,
+      referralCount: CAdoc.referralCount,
+      referrals: CAdoc.referrals
+    } 
+
+    res.status(200).json(object)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ "errors": {"message": "Internal Server Error"} })
+  }
+})
+
+module.exports = { registerUser, registerCa, loginCa, logoutCa, loginTest, getCaData };
