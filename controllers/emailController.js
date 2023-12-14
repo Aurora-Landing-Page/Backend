@@ -16,7 +16,7 @@ var transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD,
   },
 });
-const sendMail = async (req, res) => {
+const sendSignupMail = async (req, res) => {
   const { name, email } = req.body;
   var mailOptions = {
     from: process.env.EMAIL,
@@ -348,4 +348,7 @@ const sendMail = async (req, res) => {
   res.status(200).send({ message: "Mail sent!" });
 };
 
-module.exports = { sendMail };
+// To be implemented
+const sendForgotPassMail = async (email, code) => { console.log(`Email request recieved \n${ email } \n${ code }`); return; }
+
+module.exports = { sendSignupMail, sendForgotPassMail };

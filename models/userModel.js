@@ -54,4 +54,21 @@ const userSchema = mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Register", userSchema);
+userSchema.statics.login = async function (email, password) {
+  const user = await this.findOne({ email })
+
+  try {
+    if (user) {
+      const auth = await bcrypt.compare(password, user.password)
+      if (auth) {
+          return user
+      } 
+      throw new Error("Invalid password")
+    }
+    throw new Error("User does not exist")
+  } catch (error) {
+    throw error
+  }
+}
+
+module.exports = mongoose.model("user", userSchema);

@@ -5,12 +5,13 @@ const userController = require("../controllers/userController")
 const emailController = require("../controllers/emailController")
 const requireAuth = require("../middlewares/requireAuth")
 
-// All User Routes
 router.post("/register",userController.registerUser);
-router.post("/mail", emailController.sendMail);
+router.post("/mail", emailController.sendSignupMail);
 router.post("/ca", userController.registerCa);
 router.post("/loginCa", userController.loginCa);
-router.post("/logoutCa", userController.logoutCa);
+router.post("/loginUser", userController.loginUser);
+router.post("/logout", userController.logout);
+router.post("/forgotPassword", userController.forgotPass);
 
 // To get all the users who have signed up using the CA's referral code
 router.get("/getCaData", requireAuth, userController.getCaData);

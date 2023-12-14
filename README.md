@@ -72,7 +72,7 @@ EMAIL_PASSWORD=<Credentials for sending out mail>
 }
 ```
 
-## /loginCa
+## /loginCa and /loginUser
 - JWT based authentication is used
 - Request must be encoded in the body as raw JSON in the following format:
 ```
@@ -82,11 +82,11 @@ EMAIL_PASSWORD=<Credentials for sending out mail>
 }
 ```
 - If the account is found and password is valid, the MongoDB ObjectID is encoded using a JWT secret (stored as an environment variable).
-- Two cookies (named jwt and name) are then created for the user which have a persistance time of 24 hours
+- A cookie (named jwt) is then created which stores the encoded ID for the user which have a persistance time of 24 hours
 - The session thus automatically expires after 24 hours
 
-## /logoutCa
-The cookies `jwt` and `name` are set to have a persistance time of 1ms which essentially deletes them ending the session
+## /logout
+The cookie `jwt` is deleted and thus the user is logged out
 
 ## /getCaData
 - If the cookie `jwt` is set and valid (corresponding ObjectID exists in the CAs collection), a response of the following format is sent:
@@ -113,3 +113,17 @@ The cookies `jwt` and `name` are set to have a persistance time of 1ms which ess
     "_id": <MongoDB ObjectID of the user in the registers collection>
 }
 ```
+
+## /forgotPass 
+- Request must be encoded in the body as raw JSON in the following format:
+```
+{
+    "email": <String>,
+    "type": <String>
+}
+```
+- The type must be set to `user` or `CA`
+- Returns a 404 if the specified email is not found in the DB
+- Returns a 400 if the request is malformed
+- If the query is valid, a new 5 letter password is generated and stored in the DB
+- An email with the new password is then sent to the user/CA
