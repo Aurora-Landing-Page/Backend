@@ -248,13 +248,16 @@ const forgotPass = asyncHandler(async (req, res) => {
 
   try {
     const code = generateCode(5)
+    const hash = bcryptjs.hashSync(code, 10); 
 
     if (type == 'user') {
       const userDoc = await User.findOne({ email })
 
       if (userDoc) {
+        userDoc.password = hash;
+        await userDoc.save();
         emailController.sendForgotPassMail(email, code)
-        res.status(200).json({ "message": `OTP sent to email id ${ email }` })
+        res.status(200).json({ "message": `New password sent to email id ${ email }` })
       } else {
         res.status(404).json({ 
           title:"Invalid Request",
@@ -265,8 +268,10 @@ const forgotPass = asyncHandler(async (req, res) => {
       const caDoc = await CA.findOne({ email })
 
       if (caDoc) {
+        caDoc.password = hash;
+        await caDoc.save();
         emailController.sendForgotPassMail(email, code)
-        res.status(200).json({ "message": `OTP sent to email id ${ email }` })
+        res.status(200).json({ "message": `New password sent to email id ${ email }` })
       } else {
         res.status(404).json({ 
           title:"Invalid Request",

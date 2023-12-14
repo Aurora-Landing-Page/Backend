@@ -125,3 +125,5 @@ The cookie `jwt` is deleted and thus the user is logged out
 - The type must be set to `user` or `CA`
 - Returns a 404 if the specified email is not found in the DB
 - Returns a 400 if the request is malformed
+- If the query is valid, a new 5 letter password is generated and stored in the DB
+- An email with the new password is then sent to the user/CA
