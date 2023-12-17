@@ -252,11 +252,12 @@ const forgotPass = asyncHandler(async (req, res) => {
 
     if (type == 'user') {
       const userDoc = await User.findOne({ email })
+      const name = userDoc.name
 
       if (userDoc) {
         userDoc.password = hash;
         await userDoc.save();
-        emailController.sendForgotPassMail(email, code)
+        emailController.sendForgotPassMail(email, name, code)
         res.status(200).json({ "message": `New password sent to email id ${ email }` })
       } else {
         res.status(404).json({ 
@@ -266,11 +267,12 @@ const forgotPass = asyncHandler(async (req, res) => {
       }
     } else if (type == 'CA') {
       const caDoc = await CA.findOne({ email })
+      const name = caDoc.name
 
       if (caDoc) {
         caDoc.password = hash;
         await caDoc.save();
-        emailController.sendForgotPassMail(email, code)
+        emailController.sendForgotPassMail(email, name, code)
         res.status(200).json({ "message": `New password sent to email id ${ email }` })
       } else {
         res.status(404).json({ 
