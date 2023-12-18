@@ -16,7 +16,6 @@ var transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD,
   },
 });
-
 const sendSignupMail = async (req, res) => {
   const { name, email } = req.body;
   var mailOptions = {
