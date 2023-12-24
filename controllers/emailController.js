@@ -1,8 +1,7 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
 const User = require("../models/userModel");
-const schema = require("../models/caModel");
-const CA = schema.CA;
+const CA = require("../models/caModel");
 
 var transporter = nodemailer.createTransport({
   host: "smtpout.secureserver.net",

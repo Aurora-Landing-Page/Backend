@@ -44,6 +44,8 @@ const errorHandler=(error,req,res,next)=>{
             break; 
         
         default:
+            console.log(error.message)
+            console.log(error.stack)
             console.log("No error")
 }
 };

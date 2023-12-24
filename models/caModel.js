@@ -1,35 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const validator = require("validator");
-
-const minUserSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, "please enter your name"],
-    maxLength: [30, "Name cannot exceed 30 characters"],
-    minLength: [3, "Name should have more than 2 characters"],
-  },
-
-  email: {
-    type: String,
-    required: [true, "please enter your email"],
-    unique: [true, "email address already taken"],
-    validate: {
-      validator: validator.isEmail,
-      message: "Please enter a valid Email",
-    },
-  },
-
-  phone: {
-    type: Number,
-    required: [true, "please enter you phone number"],
-    unique: [true, "phone number already taken"],
-  },
-
-  college: {
-    type: String,
-  },
-})
+const minUser = require("./minUser.js");
 
 const caSchema = mongoose.Schema(
   {
@@ -87,7 +59,7 @@ const caSchema = mongoose.Schema(
 
     // Arrays are automatically initialised to [] if not defined in create request
     referrals: {
-      type: [minUserSchema],
+      type: [minUser],
     }
   },
   { timestamps: true }
@@ -104,13 +76,10 @@ caSchema.statics.login = async function (email, password) {
       } 
       throw new Error("Invalid password")
     }
-    throw new Error("User does not exist")
+    else { throw new Error("User does not exist") }
   } catch (error) {
     throw error
   }
 }
 
-const CA = mongoose.model("CA", caSchema)
-const minUser = mongoose.model("minUser", minUserSchema)
-
-module.exports = { CA, minUser };
+module.exports = mongoose.model("CA", caSchema);

@@ -5,9 +5,7 @@ const jwt = require("jsonwebtoken");
 
 // Model Imports
 const User = require("../models/userModel");
-const schema = require("../models/caModel");
-const CA = schema.CA;
-const minUser = schema.minUser;
+const CA = require("../models/caModel");
 
 // Import environment variables
 const dotenv = require("dotenv");
@@ -50,15 +48,15 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
     if (referralCode) {
       const CAdoc = await CA.findOne({ referralCode })
-
+      
       if (!CAdoc) { return res.status(400).json({ error: "Invalid referral code" }) }
       else {
-        const referral = new minUser({
-          name,
-          email,
-          phone,
-          college
-        })
+        const referral = {
+          name: name,
+          email: email,
+          phone: phone,
+          college: college
+        }
 
         CAdoc.referrals.push(referral)
         await CAdoc.save()
