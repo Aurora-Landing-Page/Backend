@@ -185,7 +185,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
 
 const logout = asyncHandler(async (req, res) => {
   res.clearCookie('jwt')
-  res.status(200).json({ "message": "Logged out!" })
+  successHandler(new SuccessResponse("Logged Out!"), res)
 })
 
 const getCaData = asyncHandler(async (req, res, next) => {
