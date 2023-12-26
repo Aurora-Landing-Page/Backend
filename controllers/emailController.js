@@ -1,9 +1,16 @@
-const express = require("express");
+// Library Imports
+const asyncHandler = require("express-async-handler");
 const nodemailer = require("nodemailer");
+
+// User Imports
+const {NotFoundError, UserError, ServerError} = require("../utils/errors")
+const SuccessResponse = require("../utils/successResponses")
+const successHandler = require("./successController")
 const User = require("../models/userModel");
 const CA = require("../models/caModel");
 
-var transporter = nodemailer.createTransport({
+// Nodemailer settings
+const transporter = nodemailer.createTransport({
   host: "smtpout.secureserver.net",
   secure: true,
   secureConnection: false, // TLS requires secureConnection to be false
@@ -19,7 +26,7 @@ var transporter = nodemailer.createTransport({
   },
 });
 
-const sendSignupMail = async (req, res) => {
+const sendSignupMail = asyncHandler(async (req, res, next) => {
   const { name, email } = req.body;
   const userDoc = await User.findOne({ email })
   const caDoc = await CA.findOne({ email })
@@ -346,7 +353,6 @@ const sendSignupMail = async (req, res) => {
       await new Promise((resolve, reject) => {
         transporter.sendMail(mailOptions, function (error, info) {
           if (error) {
-            console.error(error);
             reject(error);
           } else {
             console.log("Email sent: " + info.response);
@@ -355,14 +361,14 @@ const sendSignupMail = async (req, res) => {
         });
       });
 
-      res.status(200).json({ message: "Mail sent!" });
+      successHandler(new SuccessResponse("Mail sent!"), res)
     } catch (error) {
       console.error(error)
-      res.status(500)
+      next(new ServerError("Failed to send email"))
     }
   }
-  else { console.log(userDoc, caDoc); res.status(404).json({ message: "User not found" }) }
-};
+  else { next(new NotFoundError("User not found")) }
+})
 
 // Actually sending out the email has not been tested as I do not have the creds
 // But console.log() on line 365 signifies that this function is called correctly and forgotPass logic in userController.js works
@@ -552,7 +558,6 @@ const sendForgotPassMail = async (email, name, code) => {
       await new Promise((resolve, reject) => {
         transporter.sendMail(mailOptions, function (error, info) {
           if (error) {
-            console.error(error);
             reject(error);
           } else {
             console.log("Email sent: " + info.response);
@@ -560,11 +565,8 @@ const sendForgotPassMail = async (email, name, code) => {
           }
         });
       });
-
-      res.status(200).json({ message: "Mail sent!" });
     } catch (error) {
-      console.error(error)
-      res.status(500)
+      throw error
     }
 }
 

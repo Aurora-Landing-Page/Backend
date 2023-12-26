@@ -1,52 +1,38 @@
-const {constants}=require("../constants");
+const { titles } = require("../constants");
+require("dotenv").config();
 
-const errorHandler=(error,req,res,next)=>{
-    const statusCode = res.statusCode ? res.statusCode :500;
-    switch(statusCode){
-        case constants.VALIDATION_ERROR:
-            res.json({
-                title:"Validation Failed",
-                message:error.message,
-                stackTrace:error.stack
+const errorHandler = (error, req, res, next) => {
+    // statusCode property is guaranteed to exist due to constructor
+    const statusCode = error.statusCode ? error.statusCode : 500;
+
+    // Log server errors
+    if (statusCode >= 500) {
+        console.error(error.message);
+        console.error(error.stack);
+    }
+
+    // JSON response conditionally includes the stack trace if running in a development environment
+    if (statusCode in titles) {
+        res.status(statusCode).json({
+            title: titles[statusCode],
+            name: error.name,
+            message: error.message,
+            ...(process.env.NODE_ENV === "development" ? {stackTrace: error.stack} : {})
+        });
+    } else {
+        if (error)
+        {
+            res.status(statusCode).json({
+                title: "Unknown error",
+                name: error.name,
+                message: "Unknown error occurred",
+                ...(process.env.NODE_ENV === "development" ? {stackTrace: error.stack} : {})
             });
-            break;
-                
-        case constants.UNAUTHORIZED:
-            res.json({
-                title:"Unauthorized",
-                message:error.message,
-                stackTrace:error.stack
-            });
-            break;
-                
-        case constants.FORBIDDEN:
-            res.json({
-                title:"Forbidden",
-                message:error.message,
-                stackTrace:error.stack
-            });
-            break;    
-        
-        case constants.NOT_FOUND:
-            res.json({
-                title:"Not Found",
-                message:error.message,
-                stackTrace:error.stack
-            });
-            break; 
-        
-        case constants.SERVER_ERROR:
-            res.json({
-                title:"Server Error",
-                message:error.message,
-                stackTrace:error.stack
-            });
-            break; 
-        
-        default:
-            console.log(error.message)
-            console.log(error.stack)
-            console.log("No error")
-}
+        }
+        else {
+            console.error("Unhandled Exception Occurred");
+        }
+    }
 };
-module.exports=errorHandler;
+
+module.exports = errorHandler;

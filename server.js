@@ -1,12 +1,13 @@
 // Imported Required Frameworks And Modules and created Express App Instance
-require("dotenv").config();
 const express = require("express");
 const cookies = require("cookie-parser");
 const app = express();
 const connectDb = require("./config/dbConnect");
 const userRoutes = require("./routes/userRoute");
-
 const errorHandler = require("./middlewares/errorhandlers");
+
+// Import environment variables
+require("dotenv").config();
 
 // Imported all Required Middlewares
 const cors = require("cors");

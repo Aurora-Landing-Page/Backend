@@ -1,7 +1,13 @@
+// Library Imports
 const asyncHandler = require("express-async-handler");
 const bcryptjs = require("bcryptjs");
-const emailController = require("../controllers/emailController")
 const jwt = require("jsonwebtoken");
+
+// User Imports
+const {NotFoundError, UserError, ServerError} = require("../utils/errors")
+const SuccessResponse = require("../utils/successResponses")
+const successHandler = require("./successController")
+const emailController = require("./emailController")
 
 // Model Imports
 const User = require("../models/userModel");
@@ -30,26 +36,26 @@ const registerUser = asyncHandler(async (req, res, next) => {
   const { name, email, phone, gender, college, city, dob, password, referralCode } = req.body;
 
   if (!name || !email || !phone || !gender || !college || !city || !password || !dob) {
-    return res.status(400).json({ error: "All fields are necessary" });
+    next(new UserError('All fields are necessary'));
   }
 
   try {
     const checkEmail = await User.findOne({ email });
 
     if (checkEmail) {
-      return res.status(400).json({ error: "User already registered" });
+      next(new UserError('Email already taken'));
     }
 
     const checkPhone = await User.findOne({ phone });
 
     if (checkPhone) {
-      return res.status(400).json({ error: "Phone number already taken" });
+      next(new UserError('Phone Number already taken'));
     }
 
     if (referralCode) {
       const CAdoc = await CA.findOne({ referralCode })
       
-      if (!CAdoc) { return res.status(400).json({ error: "Invalid referral code" }) }
+      if (!CAdoc) { next(new UserError('Invalid CA referral code')); }
       else {
         const referral = {
           name: name,
@@ -63,7 +69,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
       }
     }
 
-    const hashedPassword = bcryptjs.hashSync(password,10);
+    const hashedPassword = bcryptjs.hashSync(password, 10);
     const newUser = new User({
       name,
       email,
@@ -72,18 +78,20 @@ const registerUser = asyncHandler(async (req, res, next) => {
       college,
       city,
       password: hashedPassword,
-      dob,
+      dob
     });
 
     try {
       await newUser.save();
-      res.status(200).json({ "message": "User saved successfully" });
+      const {password, __v, ...otherFields} = newUser._doc
+      successHandler(new SuccessResponse("User created successfully", 201), res, otherFields)
     } catch (err) {
-      next(err);
+      console.error(err)
+      next(new ServerError("User could not be created"));
     }
   } catch (error) {
     console.error(error);
-    return next(error);
+    next(new ServerError("Unknown error"));
   }
 });
 
@@ -91,26 +99,27 @@ const registerCa = asyncHandler(async (req, res, next) => {
   const { name, email, phone, gender, college, city, password, dob} = req.body;
     
   if (!name || !email || !phone || !gender || !college || !city || !password || !dob) {
-    return res.status(400).json({ error: "All fields are necessary" });
+    next(new UserError("All fields are necessary"))
   }
   
   try {
     const checkEmail = await CA.findOne({ email });
 
     if (checkEmail) {
-      return res.status(400).json({ error: "CA already registered" });
+      next(new UserError('Email already taken'));
     }
 
     const checkPhone = await CA.findOne({ phone });
 
     if (checkPhone) {
-      return res.status(400).json({ error: "Phone number already taken" });
-    }     
+      next(new UserError('Phone Number already taken'));
+    }    
     
     let referralCode = generateCode();
     const checkReferralCode = await CA.findOne({ referralCode });
     
-    if (checkReferralCode) {
+    // Regenerate referral code until a unique one is obtained
+    while (checkReferralCode) {
       referralCode = generateCode();
     }
 
@@ -129,26 +138,15 @@ const registerCa = asyncHandler(async (req, res, next) => {
 
     try {
       await newCa.save();
-      res.status(200).json({ 
-        "message": "CA saved successfully", 
-        "CA": {
-          "name": name,
-          "email": email,
-          "phone": phone,
-          "gender": gender,
-          "college": college,
-          "city": city,
-          "dob": dob,
-          "referralCode": referralCode
-        } 
-      });
+      const {password, __v, ...otherFields} = newCa._doc
+      successHandler(new SuccessResponse("CA created successfully", 201), res, otherFields)
     } catch (err) {
       console.error(err)
-      next(err);
+      next(new ServerError("CA could not be created"))
     }
   } catch (error) {
     console.error(error);
-    return next(error);
+    next(new ServerError("Unknown error"))
   }
 });
 
@@ -160,33 +158,28 @@ function createToken(id) {
 }
 
 // For generating the JWT and storing it in a cookie
-const loginCa = asyncHandler(async (req, res) => {
+const loginCa = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body
   try {
     const user = await CA.login(email, password)
     const token = createToken(user._id)
     res.cookie('jwt', token, { httpOnly: true, maxAge: maxAge })
-    res.status(200).json({ userId: user._id })
+    successHandler(new SuccessResponse(`Logged in`, 202), res, { id: user._id })
   } catch (err) {
-    res.status(400).json({ 
-      title:"Invalid Request",
-      message: err.message
-    })
+    next(new UserError("Invalid username / password", 403))
   }
 })
 
-const loginUser = asyncHandler(async (req, res) => {
+const loginUser = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body
+
   try {
     const user = await User.login(email, password)
     const token = createToken(user._id)
     res.cookie('jwt', token, { httpOnly: true, maxAge: maxAge })
-    res.status(200).json({ userId: user._id })
+    successHandler(new SuccessResponse(`Logged in`, 202), res, { id: user._id })
   } catch (err) {
-    res.status(400).json({ 
-      title:"Invalid Request",
-      message: err.message
-    })
+    next(new UserError("Invalid username / password", 403))
   }
 })
 
@@ -195,99 +188,55 @@ const logout = asyncHandler(async (req, res) => {
   res.status(200).json({ "message": "Logged out!" })
 })
 
-const loginTest = asyncHandler(async (req, res, next) => {
-  const token = req.cookies.jwt
-  try {
-      if (token) {
-          jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-              if (err) { res.status(400).json({ "errors": {"message": "Invalid JWT"} }) } 
-              else { res.status(200).json({ "decoded": decoded }) }
-          })
-      } else { res.status(400).json({ "errors": {"message": "JWT does not exist, please login first"} }) }
-  } catch (error) {
-      console.error(error)
-      res.status(500).json({ "errors": {"message": "JWT does not exist, please login first"} })
-  }
-});
-
-const getCaData = asyncHandler(async (req, res) => {
+const getCaData = asyncHandler(async (req, res, next) => {
   const token = req.cookies.jwt
   let id
 
   try {
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) { res.status(400).json({ "errors": {"message": "Invalid JWT"} }) } 
-      else { const id = decoded.id }
+      if (err) { next(new UserError("Invalid JWT", 403)) }
+      else { id = decoded.id }
     })
 
-    const CAdoc = await CA.findOne({ id })
-    const object = {
-      name: CAdoc.name,
-      email: CAdoc.email,
-      phone: CAdoc.phone,
-      gender: CAdoc.gender,
-      college: CAdoc.college,
-      city: CAdoc.city,
-      dob: CAdoc.dob,
-      referralCode: CAdoc.referralCode,
-      referralCount: CAdoc.referralCount,
-      referrals: CAdoc.referrals
-    } 
-
-    res.status(200).json(object)
+    const CAdoc = await CA.findById(id)
+    if (CAdoc)
+    {
+      const {password, __v, ...otherFields} = CAdoc._doc;
+      successHandler(new SuccessResponse("CA Found"), res, otherFields)
+    }
+    else { next(new NotFoundError("CA not found")) }
   } catch (error) {
     console.error(error)
-    res.status(500).json({ "errors": {"message": "Internal Server Error"} })
+    next(new ServerError("Unknown error"))
   }
 })
 
-const forgotPass = asyncHandler(async (req, res) => {
-  const { email, type } = req.body
+const forgotPass = asyncHandler(async (req, res, next) => {
+  const { email, type } = req.body;
 
-  try {
-    const code = generateCode(5)
-    const hash = bcryptjs.hashSync(code, 10); 
+  if (type === 'user') { await resetPassAndSendMail(User, email, res, next) } 
+  else if (type === 'CA') { await resetPassAndSendMail(CA, email, res, next) }
+  else { next(new UserError('Invalid user type')) }
+});
 
-    if (type == 'user') {
-      const userDoc = await User.findOne({ email })
-      const name = userDoc.name
+const resetPassAndSendMail = async (model, email, res, next) => {
+  const code = generateCode(5);
+  const doc = await model.findOne({ email });
+  
+  if (doc) {
+    doc.password = bcryptjs.hashSync(code, 10);
+    await doc.save();
 
-      if (userDoc) {
-        userDoc.password = hash;
-        await userDoc.save();
-        emailController.sendForgotPassMail(email, name, code)
-        res.status(200).json({ "message": `New password sent to email id ${ email }` })
-      } else {
-        res.status(404).json({ 
-          title:"Invalid Request",
-          message: "User not found"
-        })
-      }
-    } else if (type == 'CA') {
-      const caDoc = await CA.findOne({ email })
-      const name = caDoc.name
+    try {
+      await emailController.sendForgotPassMail(email, doc.name, code);
+      successHandler(new SuccessResponse(`New password sent to email id ${ email }`), res);
+    } catch (error) {
+      console.error(error)
+      next(new ServerError('Failed to send email'))
+    }
+  } else {
+    next(new NotFoundError(`User with email ${email} not found`))
+  }
+}
 
-      if (caDoc) {
-        caDoc.password = hash;
-        await caDoc.save();
-        emailController.sendForgotPassMail(email, name, code)
-        res.status(200).json({ "message": `New password sent to email id ${ email }` })
-      } else {
-        res.status(404).json({ 
-          title:"Invalid Request",
-          message: "CA not found"
-        })
-      }
-    } else {
-      res.status(400).json({ 
-        title:"Invalid Request",
-        message: "Please define user type"
-      })
-    }   
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ message:"Internal Server Error" })
-  } 
-})
-
-module.exports = { registerUser, registerCa, loginCa, loginUser, logout, loginTest, getCaData, forgotPass };
+module.exports = { registerUser, registerCa, loginCa, loginUser, logout, getCaData, forgotPass };

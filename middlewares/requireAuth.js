@@ -1,4 +1,4 @@
-const asyncHandler = require("express-async-handler");
+const {NotFoundError, UserError, ServerError} = require("../utils/errors")
 const jwt = require("jsonwebtoken");
 
 // Import environment variables
@@ -9,10 +9,10 @@ const requireAuth = (req, res, next) => {
     const token = req.cookies.jwt
     if (token) {
         jwt.verify(token, process.env.JWT_SECRET, (err, _) => {
-            if (err) { res.status(400).json({ "errors": {"message": "Invalid JWT"} }) } 
+            if (err) { next(new UserError("Invalid JWT", 403)) } 
             else { next() }
         })
-    } else { res.status(400).json({ "errors": {"message": "JWT does not exist, please login first"} }) }
+    } else { next(new UserError("JWT does not exist, please login using your credentials first", 403)) }
 };
 
 module.exports = requireAuth;
