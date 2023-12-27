@@ -1,18 +1,17 @@
-// Imported Required Frameworks And Modules and created Express App Instance
+// Library Imports
 const express = require("express");
 const cookies = require("cookie-parser");
 const app = express();
+const cors = require("cors");
+
+// User Imports
 const connectDb = require("./config/dbConnect");
 const userRoutes = require("./routes/userRoute");
-const errorHandler = require("./middlewares/errorhandlers");
+const errorHandler = require("./middlewares/errorHandler");
 
 // Import environment variables
 require("dotenv").config();
 
-// Imported all Required Middlewares
-const cors = require("cors");
-
-// Defined Port for server
 const port = process.env.PORT || 3000;
 
 const startServer = async () => {
@@ -20,9 +19,7 @@ const startServer = async () => {
     try {
       // Start the Express server and listen on the defined port
       app.listen(port, () => {
-        console.log(
-          `\nSuccessfully Connected to Database...\nListening to Requests at Port: ${port}\nServer Started...`
-        );
+        console.log(`\nSuccessfully Connected to Database...\nListening to Requests at Port: ${port}\nServer Started...`);
       });
     } catch (err) {
       console.log(err);
@@ -35,16 +32,10 @@ const startServer = async () => {
 // Start Server
 startServer();
 
-// Middleware for handling CORS
+// Configuring middleware
 app.use(cors());
-
-// Middleware for parsing incoming JSON data
 app.use(express.json());
-
-// Middleware for parsing cookies
 app.use(cookies());
-
-// Middleware to log information about incoming requests
 app.use((req, res, next) => {
   console.log("\nNew Request Made :");
   console.log("Host : ", req.hostname);
@@ -56,4 +47,5 @@ app.use((req, res, next) => {
 // Using defined routes for handling various API endpoints
 app.use(userRoutes);
 
+// Attach error handling middleware 
 app.use(errorHandler);

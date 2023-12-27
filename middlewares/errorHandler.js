@@ -1,4 +1,4 @@
-const { titles } = require("../constants");
+const { titles } = require("../utils/constants");
 require("dotenv").config();
 
 const errorHandler = (error, req, res, next) => {

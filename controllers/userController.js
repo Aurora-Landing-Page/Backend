@@ -12,6 +12,9 @@ const emailController = require("./emailController")
 // Model Imports
 const User = require("../models/userModel");
 const CA = require("../models/caModel");
+const Event = require("../models/event")
+const IndividualEvent = Event.individualEvent;
+const GroupEvent = Event.groupEvent;
 
 // Import environment variables
 const dotenv = require("dotenv");
@@ -239,4 +242,28 @@ const resetPassAndSendMail = async (model, email, res, next) => {
   }
 }
 
-module.exports = { registerUser, registerCa, loginCa, loginUser, logout, getCaData, forgotPass };
+const getEvents = asyncHandler(async (req, res, next) => {
+  const { eventId, type } = req.body
+  
+  if (type === 'individual') { await getIndividualParticipants(IndividualEvent, eventId, res, next) } 
+  else if (type === 'group') { await getGroupParticipants(GroupEvent, eventId, res, next) }
+  else { next(new UserError('Invalid event type')) }
+})
+
+const getIndividualParticipants = async (model, eventId, res, next) => {
+  const event  = await model.findById(eventId)
+
+  if (event) {
+
+  } else { next(new NotFoundError(`Individual event with eventID ${eventId} not found`)) }
+}
+
+const getGroupParticipants = async (model, eventId, res, next) => {
+  const event  = await model.findById(eventId)
+
+  if (event) {
+
+  } else { next(new NotFoundError(`Individual event with eventID ${eventId} not found`)) }
+}
+
+module.exports = { registerUser, registerCa, loginCa, loginUser, logout, getCaData, forgotPass, getEvents, getTickets,  };

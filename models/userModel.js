@@ -103,11 +103,16 @@ const userSchema = mongoose.Schema(
       
       type: [Boolean],
       default: [false, false, false, false, false, false, false],
-      validate:{
+      validate: {
         // Set max length of array to 7 elements
         validator: (arr) => { return arr === undefined || arr === null || (Array.isArray(arr) && arr.length === 7) },
         message: "Invalid length of array"
       },
+
+      isAdmin: {
+        type: Boolean,
+        default: false
+      }
     },
 
     // 6 character unique ticket code for online verification
