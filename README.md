@@ -231,7 +231,7 @@
   - `500` if an internal server error occurs
   - `200` if the password was reset and a mail was successfully sent to the user
 
-## /forgotPass 
+## /contactUs
 - Request must be encoded in the body as raw JSON in the following format:
   ```
   {
