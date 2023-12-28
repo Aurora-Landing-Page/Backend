@@ -1,20 +1,29 @@
-// Imported Required Framework And Module and created Express Router Instance
+// Library Imports
 const express = require("express");
 const router = express.Router();
+
+// USer Imports
 const userController = require("../controllers/userController")
+const eventController = require("../controllers/eventController")
 const emailController = require("../controllers/emailController")
 const requireAuth = require("../middlewares/requireAuth")
 
-router.post("/register",userController.registerUser);
-router.post("/mail", emailController.sendSignupMail);
-router.post("/ca", userController.registerCa);
-router.post("/loginCa", userController.loginCa);
+// Routes open to the public
+router.post("/registerUser",userController.registerUser);
+router.post("/registerCA", userController.registerCa);
 router.post("/loginUser", userController.loginUser);
+router.post("/loginCa", userController.loginCa);
 router.post("/logout", userController.logout);
 router.post("/forgotPassword", userController.forgotPass);
+router.post("/mail", emailController.sendSignupMail);
+router.post("/contactUs", userController.contactUs);
 
-// To get all the users who have signed up using the CA's referral code
+// Protected Routes (available to registered users / admins / CAs)
+router.get("/getUserData", requireAuth, userController.getUserData);
 router.get("/getCaData", requireAuth, userController.getCaData);
+router.post("/participateGroup", requireAuth, eventController.participateIndividual);
+router.post("/participateIndividual", requireAuth, eventController.participateGroup);
+router.get("/getParticipants", requireAuth, eventController.getParticipants);
 
 // Exporting Router
 module.exports = router;

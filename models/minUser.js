@@ -12,7 +12,6 @@ const minUser = new mongoose.Schema({
   email: {
     type: String,
     required: [true, "please enter your email"],
-    unique: [true, "email address already taken"],
     validate: {
       validator: validator.isEmail,
       message: "Please enter a valid Email",
@@ -22,7 +21,6 @@ const minUser = new mongoose.Schema({
   phone: {
     type: Number,
     required: [true, "please enter you phone number"],
-    unique: [true, "phone number already taken"],
   },
 
   college: {

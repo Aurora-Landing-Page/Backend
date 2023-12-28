@@ -13,8 +13,7 @@ const emailController = require("./emailController")
 const User = require("../models/userModel");
 const CA = require("../models/caModel");
 const Event = require("../models/event")
-const IndividualEvent = Event.individualEvent;
-const GroupEvent = Event.groupEvent;
+const ContactUsMessage = require("../models/contactUsMessage")
 
 // Import environment variables
 const dotenv = require("dotenv");
@@ -86,7 +85,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
     try {
       await newUser.save();
-      const {password, __v, ...otherFields} = newUser._doc
+      const {password, __v, createdAt, updatedAt, _id, ...otherFields} = newUser._doc
       successHandler(new SuccessResponse("User created successfully", 201), res, otherFields)
     } catch (err) {
       console.error(err)
@@ -141,7 +140,7 @@ const registerCa = asyncHandler(async (req, res, next) => {
 
     try {
       await newCa.save();
-      const {password, __v, ...otherFields} = newCa._doc
+      const {password, __v, createdAt, updatedAt, _id, ...otherFields} = newCa._doc
       successHandler(new SuccessResponse("CA created successfully", 201), res, otherFields)
     } catch (err) {
       console.error(err)
@@ -191,6 +190,29 @@ const logout = asyncHandler(async (req, res) => {
   successHandler(new SuccessResponse("Logged Out!"), res)
 })
 
+const getUserData = asyncHandler(async (req, res, next) => {
+  const token = req.cookies.jwt
+  let id
+
+  try {
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) { next(new UserError("Invalid JWT", 403)) }
+      else { id = decoded.id }
+    })
+
+    const userDoc = await User.findById(id)
+    if (userDoc)
+    {
+      const {password, __v, createdAt, updatedAt, _id, ...otherFields} = userDoc._doc;
+      successHandler(new SuccessResponse("User Found"), res, otherFields)
+    }
+    else { next(new NotFoundError("User not found")) }
+  } catch (error) {
+    console.error(error)
+    next(new ServerError("Unknown error"))
+  }
+})
+
 const getCaData = asyncHandler(async (req, res, next) => {
   const token = req.cookies.jwt
   let id
@@ -204,7 +226,7 @@ const getCaData = asyncHandler(async (req, res, next) => {
     const CAdoc = await CA.findById(id)
     if (CAdoc)
     {
-      const {password, __v, ...otherFields} = CAdoc._doc;
+      const {password, __v, createdAt, updatedAt, _id, ...otherFields} = CAdoc._doc;
       successHandler(new SuccessResponse("CA Found"), res, otherFields)
     }
     else { next(new NotFoundError("CA not found")) }
@@ -242,28 +264,21 @@ const resetPassAndSendMail = async (model, email, res, next) => {
   }
 }
 
-const getEvents = asyncHandler(async (req, res, next) => {
-  const { eventId, type } = req.body
-  
-  if (type === 'individual') { await getIndividualParticipants(IndividualEvent, eventId, res, next) } 
-  else if (type === 'group') { await getGroupParticipants(GroupEvent, eventId, res, next) }
-  else { next(new UserError('Invalid event type')) }
+const contactUs = asyncHandler(async (req, res, next) => {
+  const { name, email, subject, message } = req.body;
+
+  if (!name || !email || !subject || !message) {
+    next(new UserError("All fields are necessary"))
+  } else {
+    try {
+      const contact_us_message = new ContactUsMessage({name, email, subject, message})
+      await contact_us_message.save()
+      successHandler(new SuccessResponse("Your message has been saved, we will contact you shortly"), res)
+    } catch (error) {
+      console.error(error)
+      next(new ServerError("The message could not be saved in the DB"))
+    }
+  }
 })
 
-const getIndividualParticipants = async (model, eventId, res, next) => {
-  const event  = await model.findById(eventId)
-
-  if (event) {
-
-  } else { next(new NotFoundError(`Individual event with eventID ${eventId} not found`)) }
-}
-
-const getGroupParticipants = async (model, eventId, res, next) => {
-  const event  = await model.findById(eventId)
-
-  if (event) {
-
-  } else { next(new NotFoundError(`Individual event with eventID ${eventId} not found`)) }
-}
-
-module.exports = { registerUser, registerCa, loginCa, loginUser, logout, getCaData, forgotPass, getEvents, getTickets,  };
+module.exports = { registerUser, registerCa, loginCa, loginUser, logout, getUserData, getCaData, forgotPass, contactUs };

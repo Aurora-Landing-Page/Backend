@@ -109,12 +109,13 @@ const userSchema = mongoose.Schema(
         message: "Invalid length of array"
       },
 
-      isAdmin: {
-        type: Boolean,
-        default: false
-      }
     },
-
+    
+    isAdmin: {
+      type: Boolean,
+      default: false
+    },
+    
     // 6 character unique ticket code for online verification
     ticketCode: {
       type: String
