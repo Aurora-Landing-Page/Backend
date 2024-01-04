@@ -6,7 +6,7 @@ const nodemailer = require("nodemailer");
 const {NotFoundError, UserError, ServerError} = require("../utils/errors")
 const SuccessResponse = require("../utils/successResponses")
 const successHandler = require("./successController")
-const User = require("../models/userModel");
+const { User } = require("../models/userModel");
 const CA = require("../models/caModel");
 
 // Nodemailer settings
