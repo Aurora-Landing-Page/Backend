@@ -5,11 +5,6 @@ const minUser = require("./minUser");
 
 const groupSchema = mongoose.Schema(
   {
-    eventID: {
-      type: mongoose.Types.ObjectId,
-      required: [true, "Please specify the event your group is participating in"]
-    },
-
     groupName: {
       type: String,
       minLength: [3, "The group name must have a minimum of three characters"],
@@ -92,7 +87,8 @@ const userSchema = mongoose.Schema(
     },
 
     participatedGroup: {
-      type: [groupSchema],
+      type: Map,
+      of: groupSchema
     },
 
     purchasedTickets: {
@@ -153,4 +149,6 @@ userSchema.statics.verify = async function (ticketCode) {
   }
 }
 
-module.exports = mongoose.model("user", userSchema);
+const User = mongoose.model("user", userSchema);
+const Group = mongoose.model("group", groupSchema);
+module.exports = {User, Group};

@@ -10,7 +10,7 @@ const successHandler = require("./successController")
 const emailController = require("./emailController")
 
 // Model Imports
-const User = require("../models/userModel");
+const { User } = require("../models/userModel");
 const CA = require("../models/caModel");
 const Event = require("../models/event")
 const ContactUsMessage = require("../models/contactUsMessage")

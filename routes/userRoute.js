@@ -21,8 +21,8 @@ router.post("/contactUs", userController.contactUs);
 // Protected Routes (available to registered users / admins / CAs)
 router.get("/getUserData", requireAuth, userController.getUserData);
 router.get("/getCaData", requireAuth, userController.getCaData);
-router.post("/participateGroup", requireAuth, eventController.participateIndividual);
-router.post("/participateIndividual", requireAuth, eventController.participateGroup);
+router.post("/participateIndividual", requireAuth, eventController.participateIndividual);
+router.post("/participateGroup", requireAuth, eventController.participateGroup);
 router.get("/getParticipants", requireAuth, eventController.getParticipants);
 
 // Exporting Router
