@@ -6,7 +6,8 @@ const cors = require("cors");
 
 // User Imports
 const connectDb = require("./config/dbConnect");
-const userRoutes = require("./routes/userRoute");
+const userRoutes = require("./routes/userRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 
 // Import environment variables
@@ -46,6 +47,7 @@ app.use((req, res, next) => {
 
 // Using defined routes for handling various API endpoints
 app.use(userRoutes);
+app.use(adminRoutes);
 
 // Attach error handling middleware 
 app.use(errorHandler);

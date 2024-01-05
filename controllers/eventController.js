@@ -7,6 +7,7 @@ const mongoose = require("mongoose")
 const {NotFoundError, UserError, ServerError} = require("../utils/errors")
 const SuccessResponse = require("../utils/successResponses")
 const successHandler = require("./successController")
+const { AdminAddedUser, AdminAddedGroup } = require("../models/adminAdded")
 const emailController = require("./emailController")
 
 // Model Imports
@@ -31,14 +32,115 @@ const confirmPayment = async(userId, eventDoc, members) => {
   }
 }
 
-const purchaseTickets = asyncHandler(async (req, res, next) => {
+const addIndividual = asyncHandler(async (req, res, next) => {
+  const { eventId, name } = req.body;
+  let { email, phone } = req.body;
+  const token = req.cookies.jwt
+
+  if (!eventId || !name) { next(new UserError("eventId and name are required fields!")) }
+  else {
+    const eventDoc = await event.findById(eventId)
+    
+    if (eventDoc.isGroup) {
+      next(new UserError("Malformed request")) 
+    }
+    else {
+      let id;
+      jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) { next(new UserError("Invalid JWT", 403)) } 
+        else { id = decoded.id }
+      })
+
+      const userDoc = await User.findById(id)
+
+      if (!email) { email = userDoc.email }
+      if (!phone) { phone = userDoc.phone }
+      
+      const newUser = new AdminAddedUser({ name, email, phone })
+      const userObjId = new mongoose.Types.ObjectId(newUser.id)
+      const eventObjId = new mongoose.Types.ObjectId(eventId)
+
+      try {
+        eventDoc.participants.push(userObjId)
+        newUser.participatedIndividual.push(eventObjId)
+
+        await eventDoc.save()
+        await newUser.save()
+        successHandler(new SuccessResponse("Participation confirmed in event"), res)
+      } catch (error) {
+        console.error(error)
+        next(new ServerError("Details could not be saved"))
+      }
+    }
+  }
+})
+
+const addGroup = asyncHandler(async (req, res, next) => {
+  const { eventId, groupName, members } = req.body
+  let { email, phone } = req.body
+  const token = req.cookies.jwt
   
+  members.forEach((member) => {
+    if (!member.name) { next(new UserError("Invalid members array, name field is necessary!")) }
+    else { return; }
+  })
+
+  if (!eventId || !groupName || !members) { next(new UserError("eventId, grouName and members are required fields!")) }
+  else {
+    const eventDoc = await event.findById(eventId)
+    
+    if (!eventDoc.isGroup) {
+      next(new UserError("Malformed request")) 
+    }
+    else {
+      let id;
+      jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) { next(new UserError("Invalid JWT", 403)) } 
+        else { id = decoded.id }
+      })
+
+      const userDoc = await User.findById(id)
+
+      if (!email) { email = userDoc.email }
+      if (!phone) { phone = userDoc.phone }
+
+      members.forEach((member) => {
+        if (!member.email || member.phone) { member.email = userDoc.email; member.phone = userDoc.phone }
+        else { return; }
+      })
+      
+      const newUser = new AdminAddedUser({ name: groupName, email, phone })
+      const userObjId = new mongoose.Types.ObjectId(newUser.id)
+
+      try {
+        if (!newUser.participatedGroup) {
+          newUser.participatedGroup = new Map();
+        }
+
+        eventDoc.participants.push(userObjId)
+
+        const groupInstance = new Group({ groupName, members })
+        newUser.participatedGroup.set(eventId, groupInstance)
+        newUser.markModified("participatedGroup")
+
+        await eventDoc.save()
+        await newUser.save()
+        successHandler(new SuccessResponse("Participation confirmed in event"), res)
+      } catch (error) {
+        console.error(error)
+        next(new ServerError("Details could not be saved"))
+      }
+    }
+  }
+})
+
+const purchaseTickets = asyncHandler(async (req, res, next) => {
+
 })
 
 const participateIndividual = asyncHandler(async (req, res, next) => {
   const { eventId } = req.body;
   const token = req.cookies.jwt;
-  console.log(obj)
   let id;
 
   if (!eventId) { next(new UserError("Malformed request!")) }
@@ -54,7 +156,13 @@ const participateIndividual = asyncHandler(async (req, res, next) => {
     if (eventDoc) {
       if (eventDoc.isGroup) {
         next(new UserError("Malformed request"))
-        console.log(obj)
+      } else {
+        const userObjId = new mongoose.Types.ObjectId(id)
+        const eventObjId = new mongoose.Types.ObjectId(eventId)
+
+        const alreadyParticipated = userDoc.participatedIndividual.some((id) => {
+          return id.equals(eventObjId)
+        })
 
         if (alreadyParticipated) {
           next(new UserError("Already participated in this event!", 409))
@@ -155,7 +263,28 @@ const getParticipants = asyncHandler(async (req, res, next) => {
                     from: "users",
                     localField: "participants",
                     foreignField: "_id",
-                    as: "participant"
+                    as: "participant_1"
+                  }
+                },
+                {
+                  $lookup: {
+                    from: "admin_added_users",
+                    localField: "participants",
+                    foreignField: "_id",
+                    as: "participant_2"
+                  }
+                },
+                {
+                  $addFields: {
+                    participant: {
+                      $concatArrays: ["$participant_1", "$participant_2"]
+                    }
+                  }
+                },
+                {
+                  $project: {
+                    participant_1: 0,
+                    participant_2: 0
                   }
                 },
                 { $unwind: "$participant" },
@@ -184,7 +313,28 @@ const getParticipants = asyncHandler(async (req, res, next) => {
                     from: "users",
                     localField: "participants",
                     foreignField: "_id",
-                    as: "leader"
+                    as: "leader_1"
+                  }
+                },
+                {
+                  $lookup: {
+                    from: "admin_added_users",
+                    localField: "participants",
+                    foreignField: "_id",
+                    as: "leader_2"
+                  }
+                },
+                {
+                  $addFields: {
+                    leader: {
+                      $concatArrays: ["$leader_1", "$leader_2"]
+                    }
+                  }
+                },
+                {
+                  $project: {
+                    leader_1: 0,
+                    leader_2: 0
                   }
                 },
                 { $unwind: "$leader" },
@@ -212,4 +362,4 @@ const getParticipants = asyncHandler(async (req, res, next) => {
     }
 })
 
-module.exports = { purchaseTickets, participateIndividual, participateGroup, getParticipants, getParticipants };
+module.exports = { purchaseTickets, participateIndividual, participateGroup, getParticipants, getParticipants, addIndividual, addGroup };

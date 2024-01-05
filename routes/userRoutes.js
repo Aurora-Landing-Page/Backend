@@ -6,7 +6,7 @@ const router = express.Router();
 const userController = require("../controllers/userController")
 const eventController = require("../controllers/eventController")
 const emailController = require("../controllers/emailController")
-const requireAuth = require("../middlewares/requireAuth")
+const { requireAuth, requireAdmin } = require("../middlewares/requireAuth")
 
 // Routes open to the public
 router.post("/registerUser",userController.registerUser);
@@ -23,7 +23,6 @@ router.get("/getUserData", requireAuth, userController.getUserData);
 router.get("/getCaData", requireAuth, userController.getCaData);
 router.post("/participateIndividual", requireAuth, eventController.participateIndividual);
 router.post("/participateGroup", requireAuth, eventController.participateGroup);
-router.get("/getParticipants", requireAuth, eventController.getParticipants);
 
 // Exporting Router
 module.exports = router;

@@ -1,3 +1,5 @@
 .env
 node_modules
 mongo-pass
+config/.env
+config/populateAdmins.js

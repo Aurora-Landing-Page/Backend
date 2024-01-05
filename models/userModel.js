@@ -44,28 +44,15 @@ const userSchema = mongoose.Schema(
       unique: [true, "phone number already taken"],
     },
     
-    gender: {
-      type: String,
-      required: [true, "please enter you gender"],
-    },
-    
-    college: {
-      type: String,
-    },
-    
-    city: {
-      type: String,
-      required: [true, "please enter you city"],
-    },
+    // Optional Fields
+    gender: { type: String },
+    college: { type: String },
+    city: { type: String },
+    dob: { type: Date },
     
     password: {
       type: String,
       required: [true, "please enter your password"],
-    },
-
-    dob: {
-      type: Date,
-      required: [true, "please enter you dob"],
     },
 
     earlySignup: {
