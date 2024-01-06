@@ -1,34 +1,77 @@
+// Library Imports
 const asyncHandler = require("express-async-handler");
-const User = require("../models/registerModel");
+const bcryptjs = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+
+// User Imports
+const {NotFoundError, UserError, ServerError} = require("../utils/errors")
+const SuccessResponse = require("../utils/successResponses")
+const successHandler = require("./successController")
+const emailController = require("./emailController")
+
+// Model Imports
+const { User } = require("../models/userModel");
 const CA = require("../models/caModel");
-const bcryptjs =  require('bcryptjs');
+const Event = require("../models/event")
+const ContactUsMessage = require("../models/contactUsMessage")
+
+// Import environment variables
+const dotenv = require("dotenv");
+dotenv.config();
+
+// JWT cookie persists for 1 day (value below is in ms)
+const maxAge = 1 * 24 * 60 * 60 * 1000;
+
+// Generates alphanumeric code of specified length
+function generateCode(length = 8) {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let referralCode = '';
+
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    referralCode += characters[randomIndex];
+  }
+  return referralCode;
+};
 
 const registerUser = asyncHandler(async (req, res, next) => {
-  const { name, email, phone, gender, college,city,dob, password, confirm_password } = req.body;
-  
-  if (!name || !email || !phone || !gender || !college || !city || !password || !confirm_password || !dob) {
-    return res.status(400).json({ error: "All fields are necessary" });
+  const { name, email, phone, gender, college, city, dob, password, referralCode } = req.body;
+
+  if (!name || !email || !phone || !gender || !college || !city || !password || !dob) {
+    next(new UserError('All fields are necessary'));
   }
 
   try {
     const checkEmail = await User.findOne({ email });
 
     if (checkEmail) {
-      return res.status(400).json({ error: "User already registered" });
+      next(new UserError('Email already taken'));
     }
 
     const checkPhone = await User.findOne({ phone });
 
     if (checkPhone) {
-      return res.status(400).json({ error: "Phone number already taken" });
+      next(new UserError('Phone Number already taken'));
     }
 
-    if (password !== confirm_password) {
-      return res.status(400).json({ error: "Password didn't match" });
-    }     
+    if (referralCode) {
+      const CAdoc = await CA.findOne({ referralCode })
+      
+      if (!CAdoc) { next(new UserError('Invalid CA referral code')); }
+      else {
+        const referral = {
+          name: name,
+          email: email,
+          phone: phone,
+          college: college
+        }
 
+        CAdoc.referrals.push(referral)
+        await CAdoc.save()
+      }
+    }
 
-    const hashedPassword = bcryptjs.hashSync(password,10);
+    const hashedPassword = bcryptjs.hashSync(password, 10);
     const newUser = new User({
       name,
       email,
@@ -37,21 +80,20 @@ const registerUser = asyncHandler(async (req, res, next) => {
       college,
       city,
       password: hashedPassword,
-      dob,
+      dob
     });
 
     try {
       await newUser.save();
-     res.status(200).json("user saved successfully");
-     console.log(`User created: ${newUser}`);
-     } catch(err) {
-        next(err);
-     }
-
-    
+      const {password, __v, createdAt, updatedAt, _id, ...otherFields} = newUser._doc
+      successHandler(new SuccessResponse("User created successfully", 201), res, otherFields)
+    } catch (err) {
+      console.error(err)
+      next(new ServerError("User could not be created"));
+    }
   } catch (error) {
     console.error(error);
-    return next(error);
+    next(new ServerError("Unknown error"));
   }
 });
 
@@ -59,44 +101,31 @@ const registerCa = asyncHandler(async (req, res, next) => {
   const { name, email, phone, gender, college, city, password, dob} = req.body;
     
   if (!name || !email || !phone || !gender || !college || !city || !password || !dob) {
-    return res.status(400).json({ error: "All fields are necessary" });
+    next(new UserError("All fields are necessary"))
   }
   
   try {
     const checkEmail = await CA.findOne({ email });
 
     if (checkEmail) {
-      return res.status(400).json({ error: "CA already registered" });
+      next(new UserError('Email already taken'));
     }
 
     const checkPhone = await CA.findOne({ phone });
 
     if (checkPhone) {
-      return res.status(400).json({ error: "Phone number already taken" });
-    }     
-
-    const hashedPassword = bcryptjs.hashSync(password,10);
-
-    const generateReferralCode = () => {
-      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let referralCode = '';
+      next(new UserError('Phone Number already taken'));
+    }    
     
-      for (let i = 0; i < 8; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        referralCode += characters[randomIndex];
-      }
-      return referralCode;
-    };
-    
-    let referralCode = generateReferralCode();
+    let referralCode = generateCode();
     const checkReferralCode = await CA.findOne({ referralCode });
     
-    if (checkReferralCode) {
-      referralCode = generateReferralCode();
+    // Regenerate referral code until a unique one is obtained
+    while (checkReferralCode) {
+      referralCode = generateCode();
     }
-    
-    console.log(referralCode);
-    
+
+    const hashedPassword = bcryptjs.hashSync(password,10);
     const newCa = new CA({
       name,
       email,
@@ -106,23 +135,150 @@ const registerCa = asyncHandler(async (req, res, next) => {
       city,
       password: hashedPassword,
       dob,
-      referralCode: referralCode,
-      referralCount: 0,
+      referralCode: referralCode
     });
 
     try {
       await newCa.save();
-     res.status(200).json("CA saved successfully");
-     console.log(`CA created: ${newCa}`);
-     } catch(err) {
-        next(err);
-     }
-
-    
+      const {password, __v, createdAt, updatedAt, _id, ...otherFields} = newCa._doc
+      successHandler(new SuccessResponse("CA created successfully", 201), res, otherFields)
+    } catch (err) {
+      console.error(err)
+      next(new ServerError("CA could not be created"))
+    }
   } catch (error) {
     console.error(error);
-    return next(error);
+    next(new ServerError("Unknown error"))
   }
 });
 
-module.exports = { registerUser, registerCa };
+// Actually responsible for creating the token
+function createToken(id) {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+      expiresIn: maxAge
+  })
+}
+
+// For generating the JWT and storing it in a cookie
+const loginCa = asyncHandler(async (req, res, next) => {
+  const { email, password } = req.body
+  try {
+    const user = await CA.login(email, password)
+    const token = createToken(user._id)
+    res.cookie('jwt', token, { httpOnly: true, maxAge: maxAge })
+    successHandler(new SuccessResponse(`Logged in`, 202), res, { id: user._id })
+  } catch (err) {
+    next(new UserError("Invalid username / password", 403))
+  }
+})
+
+const loginUser = asyncHandler(async (req, res, next) => {
+  const { email, password } = req.body
+
+  try {
+    const user = await User.login(email, password)
+    const token = createToken(user._id)
+    res.cookie('jwt', token, { httpOnly: true, maxAge: maxAge })
+    successHandler(new SuccessResponse(`Logged in`, 202), res, { id: user._id })
+  } catch (err) {
+    next(new UserError("Invalid username / password", 403))
+  }
+})
+
+const logout = asyncHandler(async (req, res) => {
+  res.clearCookie('jwt')
+  successHandler(new SuccessResponse("Logged Out!"), res)
+})
+
+const getUserData = asyncHandler(async (req, res, next) => {
+  const token = req.cookies.jwt
+  let id
+
+  try {
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) { next(new UserError("Invalid JWT", 403)) }
+      else { id = decoded.id }
+    })
+
+    const userDoc = await User.findById(id)
+    if (userDoc)
+    {
+      const {password, __v, createdAt, updatedAt, _id, ...otherFields} = userDoc._doc;
+      successHandler(new SuccessResponse("User Found"), res, otherFields)
+    }
+    else { next(new NotFoundError("User not found")) }
+  } catch (error) {
+    console.error(error)
+    next(new ServerError("Unknown error"))
+  }
+})
+
+const getCaData = asyncHandler(async (req, res, next) => {
+  const token = req.cookies.jwt
+  let id
+
+  try {
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) { next(new UserError("Invalid JWT", 403)) }
+      else { id = decoded.id }
+    })
+
+    const CAdoc = await CA.findById(id)
+    if (CAdoc)
+    {
+      const {password, __v, createdAt, updatedAt, _id, ...otherFields} = CAdoc._doc;
+      successHandler(new SuccessResponse("CA Found"), res, otherFields)
+    }
+    else { next(new NotFoundError("CA not found")) }
+  } catch (error) {
+    console.error(error)
+    next(new ServerError("Unknown error"))
+  }
+})
+
+const forgotPass = asyncHandler(async (req, res, next) => {
+  const { email, type } = req.body;
+
+  if (type === 'user') { await resetPassAndSendMail(User, email, res, next) } 
+  else if (type === 'CA') { await resetPassAndSendMail(CA, email, res, next) }
+  else { next(new UserError('Invalid user type')) }
+});
+
+const resetPassAndSendMail = async (model, email, res, next) => {
+  const code = generateCode(5);
+  const doc = await model.findOne({ email });
+  
+  if (doc) {
+    doc.password = bcryptjs.hashSync(code, 10);
+    await doc.save();
+
+    try {
+      await emailController.sendForgotPassMail(email, doc.name, code);
+      successHandler(new SuccessResponse(`New password sent to email id ${ email }`), res);
+    } catch (error) {
+      console.error(error)
+      next(new ServerError('Failed to send email'))
+    }
+  } else {
+    next(new NotFoundError(`User with email ${email} not found`))
+  }
+}
+
+const contactUs = asyncHandler(async (req, res, next) => {
+  const { name, email, subject, message } = req.body;
+
+  if (!name || !email || !subject || !message) {
+    next(new UserError("All fields are necessary"))
+  } else {
+    try {
+      const contact_us_message = new ContactUsMessage({name, email, subject, message})
+      await contact_us_message.save()
+      successHandler(new SuccessResponse("Your message has been saved, we will contact you shortly"), res)
+    } catch (error) {
+      console.error(error)
+      next(new ServerError("The message could not be saved in the DB"))
+    }
+  }
+})
+
+module.exports = { registerUser, registerCa, loginCa, loginUser, logout, getUserData, getCaData, forgotPass, contactUs };
