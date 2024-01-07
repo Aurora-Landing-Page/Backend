@@ -79,20 +79,23 @@ const userSchema = mongoose.Schema(
     },
 
     purchasedTickets: {
-      // Array is expected to be of the format
-      // [flag, pronite1, pronite2, pronite3, wholeEvent1, wholeEvent2, wholeEvent3]
-      // flag signifies if any ticket is purchased for the event
-      // Each subsequent element signifies if the user can attend that particular event
-      
       type: [Boolean],
-      default: [false, false, false, false, false, false, false],
+      default: [false, false],
       validate: {
-        // Set max length of array to 7 elements
-        validator: (arr) => { return arr === undefined || arr === null || (Array.isArray(arr) && arr.length === 7) },
+        // Set max length of array to 2 elements
+        validator: (arr) => { return arr === undefined || arr === null || (Array.isArray(arr) && arr.length === 2) },
         message: "Invalid length of array"
       },
-
     },
+
+    attendedEvent: {
+      type: [Boolean],
+      default: [false, false, false, false, false, false],
+      validate: {
+        // Set max length of array to 6 elements
+        validator: (arr) => { return arr === undefined || arr === null || (Array.isArray(arr) && arr.length === 6) },
+        message: "Invalid length of array"
+    }},
     
     isAdmin: {
       type: Boolean,
@@ -119,18 +122,6 @@ userSchema.statics.login = async function (email, password) {
       throw new Error("Invalid password")
     }
     throw new Error("User does not exist")
-  } catch (error) {
-    throw error
-  }
-}
-
-userSchema.statics.verify = async function (ticketCode) {
-  const user = await this.findOne({ ticketCode })
-  try {
-    if (user) {
-        return user
-    }
-    else { throw new Error("User not found") }
   } catch (error) {
     throw error
   }

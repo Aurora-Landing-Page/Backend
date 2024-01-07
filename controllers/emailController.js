@@ -568,4 +568,33 @@ const sendForgotPassMail = async (email, name, code) => {
     }
 }
 
-module.exports = { sendSignupMail, sendForgotPassMail };
+const sendQRMail = async (email, name, image) => {
+  var mailOptions = {
+    from: process.env.EMAIL,
+    to: email,
+    subject: "Aurora 2024: Ticket",
+    html: ``,
+    attachments: [{
+      filename: 'ticket.png',
+      path: Buffer.from(image.split(',')[1], 'base64'),
+      contentType: 'image/png'
+    }]
+  };
+  
+  try {
+    await new Promise((resolve, reject) => {
+      transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+          reject(error);
+        } else {
+          console.log("Email sent: " + info.response);
+          resolve(info);
+        }
+      });
+    });
+  } catch (error) {
+    throw error
+  }
+}
+
+module.exports = { sendSignupMail, sendForgotPassMail, sendQRMail };

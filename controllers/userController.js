@@ -2,6 +2,8 @@
 const asyncHandler = require("express-async-handler");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const Jimp = require('jimp');
+const qrcode = require('qrcode')
 
 // User Imports
 const {NotFoundError, UserError, ServerError} = require("../utils/errors")
@@ -34,6 +36,30 @@ function generateCode(length = 8) {
   return referralCode;
 };
 
+async function generateTicket(ticketCode) {
+ let ticketImage = await Jimp.read('/home/nilanjan-mitra/Desktop/Backend/controllers/ticket.png');
+ const toEncode = process.env.SITE + "/verify?ticketCode=" + ticketCode
+ const opts = {
+    errorCorrectionLevel: 'H',
+    color: {
+        dark: "#000", 
+        light: "#00FF1213" 
+    },
+    width: 250
+ }
+ let qrCodeDataUrl = await qrcode.toDataURL(toEncode, opts);
+ let base64Image = qrCodeDataUrl.split(';base64,').pop();
+ let qrCodeImage = await Jimp.read(Buffer.from(base64Image, 'base64'));
+
+ await ticketImage.composite(qrCodeImage, 1605, 195);
+
+ let font = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
+ ticketImage.print(font, 1748, 475, ticketCode);
+ ticketImage.resize(1200, Jimp.AUTO);
+
+ return ticketImage;
+}
+
 const registerUser = asyncHandler(async (req, res, next) => {
   const { name, email, phone, gender, college, city, dob, password, referralCode } = req.body;
 
@@ -43,16 +69,10 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
   try {
     const checkEmail = await User.findOne({ email });
-
-    if (checkEmail) {
-      next(new UserError('Email already taken'));
-    }
+    if (checkEmail) { next(new UserError('Email already taken')) }
 
     const checkPhone = await User.findOne({ phone });
-
-    if (checkPhone) {
-      next(new UserError('Phone Number already taken'));
-    }
+    if (checkPhone) { next(new UserError('Phone Number already taken')) }
 
     if (referralCode) {
       const CAdoc = await CA.findOne({ referralCode })
@@ -66,12 +86,17 @@ const registerUser = asyncHandler(async (req, res, next) => {
           college: college
         }
 
-        CAdoc.referrals.push(referral)
+        CAdoc._doc.referrals.push(referral)
         await CAdoc.save()
       }
     }
 
     const hashedPassword = bcryptjs.hashSync(password, 10);
+    
+    let ticketCode = generateCode(6);
+    const checkTicketCode = await CA.findOne({ ticketCode });
+    while (checkTicketCode) { ticketCode = generateCode() }
+    
     const newUser = new User({
       name,
       email,
@@ -80,7 +105,8 @@ const registerUser = asyncHandler(async (req, res, next) => {
       college,
       city,
       password: hashedPassword,
-      dob
+      dob,
+      ticketCode
     });
 
     try {
@@ -106,16 +132,10 @@ const registerCa = asyncHandler(async (req, res, next) => {
   
   try {
     const checkEmail = await CA.findOne({ email });
-
-    if (checkEmail) {
-      next(new UserError('Email already taken'));
-    }
+    if (checkEmail) { next(new UserError('Email already taken')) }
 
     const checkPhone = await CA.findOne({ phone });
-
-    if (checkPhone) {
-      next(new UserError('Phone Number already taken'));
-    }    
+    if (checkPhone) { next(new UserError('Phone Number already taken')) }    
     
     let referralCode = generateCode();
     const checkReferralCode = await CA.findOne({ referralCode });
@@ -153,9 +173,9 @@ const registerCa = asyncHandler(async (req, res, next) => {
 });
 
 // Actually responsible for creating the token
-function createToken(id) {
+function createToken(id, age = maxAge) {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-      expiresIn: maxAge
+      expiresIn: age
   })
 }
 
@@ -281,4 +301,45 @@ const contactUs = asyncHandler(async (req, res, next) => {
   }
 })
 
-module.exports = { registerUser, registerCa, loginCa, loginUser, logout, getUserData, getCaData, forgotPass, contactUs };
+const generateQR = asyncHandler(async(req, res, next) => {
+  const { sendToEmail } = req.body
+  const token = req.cookies.jwt;
+  let id;
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) { next(new UserError("Invalid JWT", 403)) }
+    else { id = decoded.id }
+  })
+  
+  try {
+    const userDoc = await User.findById(id)
+    if (!userDoc) {
+      next(new UserError("Invalid credentials"))
+    } else {
+      const { ticketCode } = userDoc._doc
+      const ticketImage = await generateTicket(ticketCode)
+      const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
+  
+      res.setHeader('Content-Type', 'image/png');
+      res.send(buffer);
+    }
+  } catch (error) {
+    console.error(error)
+    next(new ServerError("QR Code could not be generated"))
+  }
+
+})
+
+module.exports = { 
+  registerUser, 
+  registerCa, 
+  loginCa, 
+  loginUser, 
+  logout, 
+  getUserData, 
+  getCaData, 
+  forgotPass, 
+  contactUs,
+  generateQR,
+  generateCode
+};

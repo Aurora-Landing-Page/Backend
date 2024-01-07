@@ -1,13 +1,17 @@
 // Library Imports
 const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
+const qrcode = require("qrcode");
+const Razorpay = require("razorpay")
 
 // User Imports
 const {NotFoundError, UserError, ServerError} = require("../utils/errors")
 const SuccessResponse = require("../utils/successResponses")
 const successHandler = require("./successController")
-const { AdminAddedUser, AdminAddedGroup } = require("../models/adminAdded")
+const { payments, timeouts } = require("../utils/constants")
+const { AdminAddedUser } = require("../models/adminAdded")
+const userController = require("./userController")
 const emailController = require("./emailController")
 
 // Model Imports
@@ -19,7 +23,31 @@ const event = require("../models/event")
 const dotenv = require("dotenv");
 dotenv.config();
 
-const confirmPayment = async(userId, eventDoc, members) => {
+// Create Razorpay Instance
+// const razorpayInstance = new Razorpay({
+//   key_id: process.env.RAZORPAY_ID,
+//   key_secret: process.env.RAZORPAY_SECRET
+// });
+
+const sendQR = async(email, name, ticketCode) => {
+  try {
+    const toEncode = process.env.SITE + "/verify?ticketCode=" + ticketCode
+
+    qrcode.toDataURL(toEncode, async (err, url) => {
+      if (err) {
+        console.error(error)
+        throw new Error(error)
+      } else {
+        await emailController.sendQRMail(email, name, url)
+      }
+    })
+  } catch (error) {
+    console.error(error)
+    throw new Error(error)
+  }
+}
+
+const confirmParticipationPayment = async(userId, eventDoc, members) => {
   if (members) {
     // Group Event handling
     // const fee = members.length * eventDoc.fee
@@ -28,9 +56,140 @@ const confirmPayment = async(userId, eventDoc, members) => {
   else {
     // Individual Event Handling
     // const fee = eventDoc.fee
-    return true    
+    return true
   }
 }
+
+const createPayment = async(userDoc, fee, purchasedTickets, accomodation, members) => {
+  // Testing pending
+  
+  // try {
+  //   const orderDetails = await razorpayInstance.orders.create({
+  //     amount: fee * 100, // In paise
+  //     currency: 'INR',
+  //     receipt: String(userDoc._doc.ticketCode), // Use the ticketCode of the userDoc as the receipt number
+  //     notes: { purchasedTickets, accomodation, members }
+  //   });
+  
+  //   return orderDetails;
+  // } catch (error) {
+  //   console.error(`Error creating order: ${error}`);
+  //   throw error;
+  // }
+  return true;
+}
+
+const createPurchaseIntent = asyncHandler(async (req, res, next) => {
+  const { event, accomodation, number, members, referralCode } = req.body;
+  const token = req.cookies.jwt;
+  let id;
+
+  // Possible purchase sizes are 1, 5 (4 + 1) and 11 (8 + 3)
+  const sizeOfGroup = number != 1 && number != 5 || number != 11
+  const eventType = event == "pronite" || event == "whole_event"
+
+  if (!event || !number || sizeOfGroup || !accomodation || !eventType) { next(new UserError("Malformed request")) }
+  else {
+    if (number > 1 && !members) { next(new UserError("Members not specified")) }
+    else {
+      members.forEach((member) => {
+        if (!member.name || !member.email || !member.phone) { next(new UserError("Invalid members array, all fields are necessary!")) }
+        else { return; }
+      })
+
+      // payable is later used to compute fee
+      let payable;
+      if (number == 1) { payable = 1 }
+      if (number == 5) { payable = 4 }
+      if (number == 11) { payable = 8 }
+
+      let id;
+      jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) { next(new UserError("Invalid JWT", 403)) } 
+        else { id = decoded.id }
+      })
+  
+      const userDoc = await User.findById(id)
+      const dt = new Date().toISOString();
+      const pronite_ticket = [true, false]
+      const whole_event_ticket = [true, true]
+      
+      let fee;
+      let purchasedTickets;
+
+      const paymentRanges = {
+      pronite: [
+        { range: [timeouts.base, timeouts.day_zero], feeKey: `day_zero_pronite`, tickets: pronite_ticket },
+        { range: [timeouts.day_zero, timeouts.day_one], feeKey: `day_one_pronite`, tickets: pronite_ticket },
+        { range: [timeouts.day_one, timeouts.day_two], feeKey: `day_two_pronite`, tickets: pronite_ticket },
+        { range: [timeouts.day_two, Infinity], feeKey: `day_three_pronite`, tickets: pronite_ticket }
+      ],
+      whole_event: [
+        { range: [timeouts.base, timeouts.day_zero], feeKey: `day_zero_whole_event`, tickets: whole_event_ticket },
+        { range: [timeouts.day_zero, timeouts.day_one], feeKey: `day_one_whole_event`, tickets: whole_event_ticket },
+        { range: [timeouts.day_one, timeouts.day_two], feeKey: `day_two_whole_event`, tickets: whole_event_ticket },
+        { range: [timeouts.day_two, Infinity], feeKey: `day_three_whole_event`, tickets: whole_event_ticket }
+      ]
+      };
+      
+      for (let range of paymentRanges[event]) {
+        if (dt >= range.range[0] && dt < range.range[1]) {
+          fee = payable * payments[range.feeKey];
+          fee += accomodation == true ? payments.accomodation : 0;
+          purchasedTickets = range.tickets;
+          break;
+        }
+      }
+
+      try {
+        const order = await createPayment(userDoc, fee, purchasedTickets, accomodation, members);
+        successHandler(new SuccessResponse("Purchase Intent Received"), res, order)        
+      } catch (error) {
+        next(new ServerError("Purchase Intent could not be created"))
+      }
+    }
+  }
+})
+
+const verifyPurchase = asyncHandler(async (req, res, next) => {
+  // Testing pending
+  // Additionally uses the Razorpay and crypto libraries
+  
+  const { razorpay_signature, razorpay_order_id, razorpay_payment_id } = req.body
+  const key_secret = process.env.RAZORPAY_SECRET
+
+  if (!razorpay_signature || !razorpay_order_id || !razorpay_payment_id) { next(new UserError("Malformed request")) }
+  else {
+    // Implementation pending, would look something like this:
+    // Works by comparing the signature received from user to the hash generated using payment_id and order_id
+    
+    let hmac = crypto.createHmac('sha256', key_secret);
+    hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+    const generated_signature = hmac.digest('hex');
+  
+    // Verify the signature
+    try {
+      if (razorpay_signature === generated_signature) {
+        const order = await razorpayInstance.orders.fetch(orderId);
+        const ticketCode = razorpay_order_id
+        const userDoc = await User.findOne({ ticketCode })
+    
+        userDoc._doc.purchasedTickets = order.notes.purchasedTickets
+        userDoc._doc.accomodation = order.notes.accomodation
+        userDoc._doc.groupPurchase = order.notes.members
+    
+        await userDoc.save()
+        await sendQR(userDoc._doc.email, userDoc._doc.name, userDoc._doc.ticketCode)
+        successHandler(new SuccessResponse("Payment has been verified!"), res)
+      } else {
+        next(new UserError("Payment could not be verified"))
+      }
+    } catch (error) {
+      next(new ServerError("Payment could not be processed"))
+    }
+  }
+
+})
 
 const addIndividual = asyncHandler(async (req, res, next) => {
   const { eventId, name } = req.body;
@@ -134,10 +293,6 @@ const addGroup = asyncHandler(async (req, res, next) => {
   }
 })
 
-const purchaseTickets = asyncHandler(async (req, res, next) => {
-
-})
-
 const participateIndividual = asyncHandler(async (req, res, next) => {
   const { eventId } = req.body;
   const token = req.cookies.jwt;
@@ -167,8 +322,8 @@ const participateIndividual = asyncHandler(async (req, res, next) => {
         if (alreadyParticipated) {
           next(new UserError("Already participated in this event!", 409))
         } else {
-          // Defaults to true for now as confirmPayment has not been implemented
-          const paid = await confirmPayment(id, eventDoc) || true;
+          // Defaults to true for now as confirmParticipationPayment has not been implemented
+          const paid = await confirmParticipationPayment(id, eventDoc) || true;
   
           if (paid) {
             try {
@@ -217,8 +372,8 @@ const participateGroup = asyncHandler(async (req, res, next) => {
         if (userDoc.participatedGroup.has(eventId)) {
           next(new UserError("Already participated in this event!", 409))
         } else {
-          // Defaults to true for now as confirmPayment has not been implemented
-          const paid = await confirmPayment(id, eventDoc) || true;
+          // Defaults to true for now as confirmParticipationPayment has not been implemented
+          const paid = await confirmParticipationPayment(id, eventDoc) || true;
   
           if (paid) {
             try {
@@ -362,4 +517,81 @@ const getParticipants = asyncHandler(async (req, res, next) => {
     }
 })
 
-module.exports = { purchaseTickets, participateIndividual, participateGroup, getParticipants, getParticipants, addIndividual, addGroup };
+const verify = asyncHandler(async(req, res, next) => {
+  const { ticketCode } = req.query
+
+  if (!ticketCode) {
+    next(new UserError("Invalid query"))
+  } else {
+    try {
+      const userDoc = await User.findOne({ ticketCode })
+      if (userDoc) {
+        const {password, __v, createdAt, updatedAt, _id, ...otherFields} = userDoc._doc;
+        successHandler(new SuccessResponse("User Found!"), res, otherFields)
+      } else {
+        next(new NotFoundError("User with corresponding ticket code could not be found"))
+      }
+    } catch (error) {
+      next(new ServerError("Ticket could not be verified"))
+    }
+  }
+})
+
+const hasAttended = asyncHandler(async(req, res, next) => {
+  const { ticketCode, event } = req.body
+  const eventName = event == "pronite" || event == "whole_event"
+
+  if (!ticketCode || !eventName) {
+    next(new UserError("Invalid query"))
+  } else {
+    let index;
+    const attendanceRanges = {
+    pronite: [
+      { range: [timeouts.base, timeouts.day_zero], index: 0 },
+      { range: [timeouts.day_zero, timeouts.day_one], index: 1 },
+      { range: [timeouts.day_one, timeouts.day_two], index: 2 },
+      { range: [timeouts.day_two, Infinity], index: 2 }
+    ],
+    whole_event: [
+      { range: [timeouts.base, timeouts.day_zero], index: 3 },
+      { range: [timeouts.day_zero, timeouts.day_one], index: 4 },
+      { range: [timeouts.day_one, timeouts.day_two], index: 5 },
+      { range: [timeouts.day_two, Infinity], index: 5 }
+    ]
+    };
+    
+    const dt = new Date().toISOString();
+    for (let range of attendanceRanges[event]) {
+      if (dt >= range.range[0] && dt < range.range[1]) {
+        index = range.index
+        break;
+      }
+    }
+
+    try {
+      const userDoc = await User.findOne({ ticketCode })
+      if (userDoc) {
+        userDoc._doc.attendedEvent[index] = true
+        await userDoc.save();
+        successHandler(new SuccessResponse("User attendance confirmed"), res)
+      } else {
+        next(new NotFoundError("Invalid ticket code"))
+      }
+    } catch (error) {
+      next(new ServerError("Ticket could not be processed"))
+    }
+  }
+})
+
+module.exports = { 
+  createPurchaseIntent,
+  verifyPurchase,
+  participateIndividual, 
+  participateGroup, 
+  getParticipants, 
+  getParticipants, 
+  addIndividual, 
+  addGroup, 
+  verify,
+  hasAttended
+};

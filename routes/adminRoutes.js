@@ -11,6 +11,8 @@ const { requireAdmin } = require("../middlewares/requireAuth")
 router.post("/addIndividual", requireAdmin, eventController.addIndividual);
 router.post("/addGroup", requireAdmin, eventController.addGroup);
 router.get("/getParticipants", requireAdmin, eventController.getParticipants);
+router.get("/verify", requireAdmin, eventController.verify);
+router.post("/attended", requireAdmin, eventController.hasAttended);
 
 // Exporting Router
 module.exports = router;

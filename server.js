@@ -42,6 +42,9 @@ app.use((req, res, next) => {
   console.log("Host : ", req.hostname);
   console.log("Path : ", req.path);
   console.log("Method : ", req.method);
+  if (Object.keys(req.body).length !== 0) { console.log("Body: ", req.body); }
+  if (Object.keys(req.query).length !== 0) { console.log("Query: ", req.query); }
+  if (Object.keys(req.params).length !== 0) { console.log("Params: ", req.params); }
   next();
 });
 
