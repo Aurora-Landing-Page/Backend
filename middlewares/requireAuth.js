@@ -23,7 +23,7 @@ const requireAdmin = (req, res, next) => {
             if (err) { next(new UserError("Invalid JWT", 403)) } 
             else {
                 const userDoc = await User.findById(decoded.id)
-                if (userDoc.isAdmin) { next() }
+                if (userDoc._doc.isAdmin) { next() }
                 else { next(new UserError("Invalid credentials", 403)) }
             }
         })

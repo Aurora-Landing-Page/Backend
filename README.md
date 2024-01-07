@@ -135,6 +135,50 @@
      - `402` if the payment could not be confirmed
      - `200` if the payment was confirmed and participation was saved
 
+   ### /generateTicket
+   - No additional data required to be encoded in the request, user must be logged in
+   - The following may be set in the request body if an email should also be sent with the ticket attached:
+     ```
+      {
+        "sendToEmail": <Boolean>
+      }
+     ```
+   - Responds with:
+     - `403` if the JWT is invalid / absent
+     - `500` if the ticket could not be generated
+     - `200` if the payment was confirmed and participation was saved
+
+
+   ### /purchase
+   - The receipt number for all orders is set to be the same as the ticket code
+   - Request must be encoded in the body as raw JSON in the following format:
+     ```
+      {
+        "event": <String>,
+        "accomodation": <Boolean>
+      }
+     ```
+   - `event` must be strictly set to `pronite` or `whole_event`
+   - Responds with:
+     - `400` if the request is malformed / invalid
+     - `400` if `accomodation` is set to true but no more accomodation is available
+     - `500` if an internal server error occurs
+     - `200` if the purchase intent was successfully created
+
+   ### /verifyPurchase
+   - Request must be encoded in the body as raw JSON in the following format:
+     ```
+      {
+        "razorpay_signature": <String>, 
+        "razorpay_order_id": <String>, 
+        "razorpay_payment_id" : <String>
+      }
+     ```
+   - Responds with:
+     - `400` if the payment could not be verified
+     - `500` if the payment could not be processed
+     - `200` if the payment was confirmed and entry was saved
+
 ## CA Endpoints
    ### /registerCa
    - For creating new Campus Ambassador accounts
@@ -324,6 +368,49 @@
      - `500` if an internal server error occurs
      - `200` if the query was successful
 
+### /verify
+   - Request must be encoded in the query as such: `/verify?ticketCode=<String>`
+   - If the query is valid, the additional fields included in the response body are:
+    ```
+     {
+       name: <String>,
+       email: <String>,
+       phone: <Number>,
+       gender: <String>,
+       college: <String>,
+       city: <String>,
+       password: <String>,
+       dob: <ISO Date>,
+       earlySignup: <Boolean>,
+       groupPurchase: <MinUser object array>,
+       accomodation: <Boolean>,
+       participatedIndividual: <MongoDB ObjectID array>,
+       participatedGroup: <Map (eventId string => GroupSchema)>,
+       purchasedTickets: <7 element Boolean array>,
+       isAdmin: <Boolean>,
+       ticketCode: <String (6 character alphanumeric)>
+     }
+     ```
+   - Responds with:
+     - `400` if the request is malformed / invalid
+     - `404` if the specified `ticketCode` could not be found
+     - `200` if the query was successful
+
+### /attended
+   - Request must be encoded in the body as raw JSON in the following format:
+     ```
+     {
+         "ticketCode": <String>,
+         "event": <String>
+     }
+     ```
+   - `event` must be strictly set to `pronite` or `whole_event`
+   - Responds with:
+     - `400` if the request is malformed / invalid
+     - `404` if the specified ticketCode could not be found
+     - `500` if an internal server error occurs
+     - `200` if the query was successful
+
 ## Protected (requireAuth) endpoints
 - The following endpoints are protected by the `requireAuth` middleware and require a valid JWT cookie to be present in the user request:
   - /getUserData
@@ -331,6 +418,9 @@
   - /participateGroup
   - /participateIndividual
   - /getParticipants
+  - /generateTicket
+  - /purchase
+  - /verifyPurchase
 - The above endpoints respond with:
   - `403` if the JWT is invalid / absent
   - The requested URL if the JWT is present and valid
@@ -340,6 +430,8 @@
   - /addGroup
   - /addIndividual
   - /getParticipants
+  - /verify
+  - /attended
 - The above endpoints respond with:
   - `403` if the JWT is invalid / absent or if the token does not correspond to an admin account
   - The requested URL if the JWT is present and valid
@@ -364,12 +456,14 @@
     accomodation: <Boolean>,
     participatedIndividual: <MongoDB ObjectID array>,
     participatedGroup: <Map (eventId string => GroupSchema)>,
-    purchasedTickets: <7 element Boolean array>,
+    purchasedTickets: <2 element Boolean array>,
+    attendedEvents: <6 element Boolean array>,
     isAdmin: <Boolean>,
     ticketCode: <String (6 character alphanumeric)>
 }
 ```
-- Expected format of purchasedTickets: [flag, pronite1, pronite2, pronite3, wholeEvent1, wholeEvent2, wholeEvent3]
+- Expected format of `purchasedTickets`: [pronite, whole_event]
+- Expected format of `attendedEvents`: [pronite_1, pronite_2, pronite_3, whole_event_1, whole_event_2, whole_event_3]
 
   ### `GroupSchema` object for `User`
   ```
