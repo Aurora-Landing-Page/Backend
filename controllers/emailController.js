@@ -358,7 +358,7 @@ const sendSignupMail = asyncHandler(async (req, res, next) => {
           }
         });
       });
-
+      
       successHandler(new SuccessResponse("Mail sent!"), res)
     } catch (error) {
       console.error(error)

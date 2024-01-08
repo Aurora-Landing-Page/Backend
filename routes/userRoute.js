@@ -1,12 +1,12 @@
 // Imported Required Framework And Module and created Express Router Instance
 const express = require("express");
 const router = express.Router();
-const userController = require("../controllers/userController")
-const emailController = require("../controllers/emailController")
-const requireAuth = require("../middlewares/requireAuth")
+const userController = require("../controllers/userController");
+const emailController = require("../controllers/emailController");
+const requireAuth = require("../middlewares/requireAuth");
 
-router.post("/register",userController.registerUser);
 router.post("/mail", emailController.sendSignupMail);
+router.post("/register", userController.registerUser);
 router.post("/ca", userController.registerCa);
 router.post("/loginCa", userController.loginCa);
 router.post("/loginUser", userController.loginUser);
