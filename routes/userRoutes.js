@@ -15,7 +15,6 @@ router.post("/loginUser", userController.loginUser);
 router.post("/loginCa", userController.loginCa);
 router.post("/logout", userController.logout);
 router.post("/forgotPassword", userController.forgotPass);
-router.post("/mail", emailController.sendSignupMail);
 router.post("/contactUs", userController.contactUs);
 
 // Protected Routes (available to registered users / admins / CAs)

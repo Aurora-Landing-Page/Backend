@@ -24,23 +24,16 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 // Create Razorpay Instance
-// const razorpayInstance = new Razorpay({
-//   key_id: process.env.RAZORPAY_ID,
-//   key_secret: process.env.RAZORPAY_SECRET
-// });
+const razorpayInstance = new Razorpay({
+  key_id: process.env.RAZORPAY_ID,
+  key_secret: process.env.RAZORPAY_SECRET
+});
 
 const sendQR = async(email, name, ticketCode) => {
   try {
-    const toEncode = process.env.SITE + "/verify?ticketCode=" + ticketCode
-
-    qrcode.toDataURL(toEncode, async (err, url) => {
-      if (err) {
-        console.error(error)
-        throw new Error(error)
-      } else {
-        await emailController.sendQRMail(email, name, url)
-      }
-    })
+    const ticketImage = await userController.generateTicket(ticketCode)
+    const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
+    await emailController.sendQRMail(email, name, buffer, ticketCode);
   } catch (error) {
     console.error(error)
     throw new Error(error)
@@ -63,19 +56,19 @@ const confirmParticipationPayment = async(userId, eventDoc, members) => {
 const createPayment = async(userDoc, fee, purchasedTickets, accomodation, members) => {
   // Testing pending
   
-  // try {
-  //   const orderDetails = await razorpayInstance.orders.create({
-  //     amount: fee * 100, // In paise
-  //     currency: 'INR',
-  //     receipt: String(userDoc._doc.ticketCode), // Use the ticketCode of the userDoc as the receipt number
-  //     notes: { purchasedTickets, accomodation, members }
-  //   });
+  try {
+    const orderDetails = await razorpayInstance.orders.create({
+      amount: fee * 100, // In paise
+      currency: 'INR',
+      receipt: String(userDoc._doc.ticketCode), // Use the ticketCode of the userDoc as the receipt number
+      notes: { purchasedTickets, accomodation, members }
+    });
   
-  //   return orderDetails;
-  // } catch (error) {
-  //   console.error(`Error creating order: ${error}`);
-  //   throw error;
-  // }
+    return orderDetails;
+  } catch (error) {
+    console.error(`Error creating order: ${error}`);
+    throw error;
+  }
   return true;
 }
 
@@ -369,7 +362,7 @@ const participateGroup = asyncHandler(async (req, res, next) => {
       } else {
         const userObjId = new mongoose.Types.ObjectId(id)
         
-        if (userDoc.participatedGroup.has(eventId)) {
+        if (userDoc && userDoc._doc.participatedGroup && userDoc._doc.participatedGroup.has(eventId)) {
           next(new UserError("Already participated in this event!", 409))
         } else {
           // Defaults to true for now as confirmParticipationPayment has not been implemented

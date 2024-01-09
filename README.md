@@ -1,11 +1,16 @@
 # Steps to Run
 - Make dotenv file:
   ```
-  JWT_SECRET=<JWT secret string for encoding>
-  URI=<MongoDB signin URI>
-  EMAIL=<Credentials for sending out mail>
-  EMAIL_PASSWORD=<Credentials for sending out mail>
-  NODE_ENV=<production || development>  // Configures stack trace printing and response format for errors
+  JWT_SECRET=<String>
+  URI=<MongoDB Connection URI>
+  NODE_ENV=<development | production>
+  TZ=<IANA timezone identifier>
+  SITE=<Site link>
+  RAZORPAY_ID=<Razorpay account ID>
+  RAZORPAY_SECRET=<Razorpay account secret>
+  EMAIL=<Sender ID>
+  EMAIL_PASSWORD=<Sender password>
+  SMTP_SERVER=<SMTP Auth Server Address>
   ```
 - npm install
 - npm start
@@ -41,39 +46,41 @@
    - Request must be encoded in the body as raw JSON in the following format:
      ```
      {
-         "name": <String>,
-         "email": <String>,
-         "phone": <Number>,
-         "gender": <String>,
-         "college": <String>,
-         "city": <String>,
-         "dob": <ISO Date>,
-         "password": <String>,
-         "referralCode": <String> (optional)
+       "name": <String>,
+       "email": <String>,
+       "phone": <Number>,
+       "gender": <String>,
+       "college": <String>,
+       "city": <String>,
+       "dob": <ISO Date>,
+       "password": <String>,
+       "referralCode": <String> (optional)
      }
      ```
    - If a new user is created in the database, the following additional fields are included in the JSON response:
      ```
      {
-         "_id": <MongoDB ObjectID>,
-         "name": <String>,
-         "email": <String>,
-         "phone": <Number>,
-         "gender": <String>,
-         "college": <String>,
-         "city": <String>,
-         "dob": <ISO Date>,,
-         "earlySignup": false,
-         "accomodation": false,
-         "participatedIndividual": [eventId array],
-         "participatedGroup": [],
-         "purchasedTickets": [7 element Boolean array],
-         "groupPurchase": [minUser Object array],
-         "createdAt": <ISO Date>,
-         "updatedAt": <ISO Date>,
+       "_id": <MongoDB ObjectID>,
+       "name": <String>,
+       "email": <String>,
+       "phone": <Number>,
+       "gender": <String>,
+       "college": <String>,
+       "city": <String>,
+       "dob": <ISO Date>,,
+       "earlySignup": false,
+       "accomodation": false,
+       "participatedIndividual": <Array of MongoDB ObjectIds>,
+       "participatedGroup": <Map (eventId => GroupSchema)>,
+       "purchasedTickets": <6 element Boolean array>,
+       "groupPurchase": <Array of MinUsers>,
+       "attendedEvent": <6 element Boolean array>,
+       "isAdmin": <Boolean>,
+       "ticketCode": <String>
      }
      ```
-   - If the referralCode is specified and valid, a minUserObject will be added to the referrals array of the corresponding CA
+   - A registration completed email is sent to the user after the user is successfully saved in the DB.
+   - If the referralCode is specified and valid, a `MinUser` will be added to the referrals array of the corresponding CA.
    - Responds with:
      - `400` if the request is malformed / invalid
      - `500` if the user could not be created due to a server error
@@ -96,9 +103,10 @@
        accomodation: <Boolean>,
        participatedIndividual: <MongoDB ObjectID array>,
        participatedGroup: <Map (eventId string => GroupSchema)>,
-       purchasedTickets: <7 element Boolean array>,
+       purchasedTickets: <6 element Boolean array>,
+       attendedEvent: <6 element Boolean array>,
        isAdmin: <Boolean>,
-       ticketCode: <String (6 character alphanumeric)>
+       ticketCode: <String>
      }
      ```
    - Responds with:
@@ -106,78 +114,6 @@
      - `404` if the JWT is valid but the corresponding CA does not exist in the DB
      - `500` if an internal server error occurs
      - `200` if the specified User was found
-   
-   ### /participateIndividual
-   - Request must be encoded in the body as raw JSON in the following format:
-     ```
-      {
-        "eventId": <String (individual event's ObjectId)>,
-      }
-     ```
-   - Responds with:
-     - `403` if the JWT is invalid / absent
-     - `409` if the user has already participated in the event 
-     - `402` if the payment could not be confirmed
-     - `200` if the payment was confirmed and participation was saved
-
-   ### /participateGroup
-   - Request must be encoded in the body as raw JSON in the following format:
-     ```
-      {
-        "eventId": <String (group event's ObjectId)>,
-        "groupName": <String>,
-        "members": <Array of MinUser Schema including leader>
-      }
-     ```
-   - Responds with:
-     - `403` if the JWT is invalid / absent
-     - `409` if the user has already participated in the event 
-     - `402` if the payment could not be confirmed
-     - `200` if the payment was confirmed and participation was saved
-
-   ### /generateTicket
-   - No additional data required to be encoded in the request, user must be logged in
-   - The following may be set in the request body if an email should also be sent with the ticket attached:
-     ```
-      {
-        "sendToEmail": <Boolean>
-      }
-     ```
-   - Responds with:
-     - `403` if the JWT is invalid / absent
-     - `500` if the ticket could not be generated
-     - `200` if the payment was confirmed and participation was saved
-
-
-   ### /purchase
-   - The receipt number for all orders is set to be the same as the ticket code
-   - Request must be encoded in the body as raw JSON in the following format:
-     ```
-      {
-        "event": <String>,
-        "accomodation": <Boolean>
-      }
-     ```
-   - `event` must be strictly set to `pronite` or `whole_event`
-   - Responds with:
-     - `400` if the request is malformed / invalid
-     - `400` if `accomodation` is set to true but no more accomodation is available
-     - `500` if an internal server error occurs
-     - `200` if the purchase intent was successfully created
-
-   ### /verifyPurchase
-   - Request must be encoded in the body as raw JSON in the following format:
-     ```
-      {
-        "razorpay_signature": <String>, 
-        "razorpay_order_id": <String>, 
-        "razorpay_payment_id" : <String>
-      }
-     ```
-   - Responds with:
-     - `400` if the payment could not be verified
-     - `500` if the payment could not be processed
-     - `200` if the payment was confirmed and entry was saved
 
 ## CA Endpoints
    ### /registerCa
@@ -192,20 +128,33 @@
          "college": <String>,
          "city": <String>,
          "dob": <ISO Date>,
-         "password": <String>
+         "password": <String>,
+         "caCode": <String>
      }
      ```
+   - The CA Code must be unique and valid. CA codes can only be generated by admin accounts.
+   - A registration completed email is sent to the user after the user is successfully saved in the DB.
    - If a new CA is created in the database, the following additional fields are included in the JSON response:
      ```
      {
-         "name": <String>,
-         "email": <String>,
-         "phone": <Number>,
-         "gender": <String>,
-         "college": <String>,
-         "city": <String>,
-         "dob": <ISO Date>,
-         "referralCode": <String>
+       name: <String>,
+       email: <String>,
+       phone: <Number>,
+       gender: <String>,
+       college: <String>,
+       city: <String>,
+       password: <String>,
+       dob: <ISO Date>,
+       earlySignup: <Boolean>,
+       groupPurchase: <MinUser object array>,
+       accomodation: <Boolean>,
+       participatedIndividual: <MongoDB ObjectID array>,
+       participatedGroup: <Map (eventId string => GroupSchema)>,
+       purchasedTickets: <6 element Boolean array>,
+       attendedEvent: <6 element Boolean array>,
+       ticketCode: <String>,
+       caCode: <String>,
+       referralCode: <String>
      }
      ```
    - Responds with:
@@ -217,30 +166,36 @@
    - If the cookie `jwt` is set and valid (corresponding ObjectID exists in the CAs collection), a response of the following format is sent:
      ```
      {
-         "_id": <MongoDB ObjectID>,
-         "name": <String>,
-         "email": <String>,
-         "phone": <Number>,
-         "gender": <String>,
-         "college": <String>,
-         "city": <String>,
-         "dob": <ISO Date>,
-         "referralCode": <String>,
-         "referrals": [minUserSchema]
-         "createdAt": <ISO Date>,
-         "updatedAt": <ISO Date>
+        "_id": <MongoDB ObjectID>,
+        "name": <String>,
+        "email": <String>,
+        "phone": <Number>,
+        "gender": <String restricted to the enum ["Male", "Female", "Non-Binary"]>,
+        "college": <String>,
+        "city": <String>,
+        "dob": <ISO Date>,
+        "earlySignup": <Boolean>,
+        "accomodation": <Boolean>,
+        "participatedIndividual": <Array of MongoDB ObjectIds>,
+        "purchasedTickets": <Boolean Array of length 6>,
+        "attendedEvent": <Boolean Array of length 6>,
+        "caCode": <String>
+        "referralCode": <String>,
+        "referrals": <Array of MinUsers>,
+        "groupPurchase": <Array of MinUsers>
      }
      ```
-   - `referrals` is an array whose elements satisfy the `minUserSchema`. The format of individual elements is depicted below:
+   - `referrals` is an array whose elements satisfy the `MinUser` schema. The format of individual elements is depicted below:
      ```
      {
-         "_id": <MongoDB ObjectID>
-         "name": <String>,
-         "email": <String>,
-         "phone": <Number>,
-         "college": <String>
+       "_id": <MongoDB ObjectID>
+       "name": <String>,
+       "email": <String>,
+       "phone": <Number>,
+       "college": <String>
      }
      ```
+   - The `_id` above is specific to the particular instance of MinUser, not some other collection.
    - Responds with:
      - `403` if the JWT is invalid / absent
      - `404` if the JWT is valid but the corresponding CA does not exist in the DB
@@ -248,21 +203,6 @@
      - `200` if the specified CA was found
 
 ## Common Endpoints
-   ### /mail
-   - For sending out mail to newly signed up users
-   - Request must be encoded in the body as raw JSON in the following format:
-     ```
-     {
-         "name": <String>,
-         "email": <String>
-     }
-     ```
-   - An email will then be sent to the email provided in req body
-   - Responds with:
-     - `404` if the specified user is not found in the DB
-     - `500` if an internal server error occurs when sending the email
-     - `200` if the email has been sent successfully
-
    ### /loginCa and /loginUser
    - JWT based authentication is used
    - Request must be encoded in the body as raw JSON in the following format:
@@ -316,6 +256,82 @@
      - `500` if an internal server error occurs
      - `200` if the message was successfully saved in the DB
 
+   ### /participateIndividual --> Payments not yet functional
+   - Request must be encoded in the body as raw JSON in the following format:
+     ```
+      {
+        "eventId": <String (individual event's ObjectId)>,
+        "type": <String (user | ca)>
+      }
+     ```
+   - Responds with:
+     - `403` if the JWT is invalid / absent
+     - `409` if the user has already participated in the event 
+     - `402` if the payment could not be confirmed
+     - `200` if the payment was confirmed and participation was saved
+
+   ### /participateGroup --> Payments not yet functional
+   - Request must be encoded in the body as raw JSON in the following format:
+     ```
+      {
+        "eventId": <String (group event's ObjectId)>,
+        "type": <String (user | ca)>,
+        "groupName": <String>,
+        "members": <Array of MinUser Schema including leader>
+      }
+     ```
+   - Responds with:
+     - `403` if the JWT is invalid / absent
+     - `409` if the user has already participated in the event 
+     - `402` if the payment could not be confirmed
+     - `200` if the payment was confirmed and participation was saved
+
+   ### /generateTicket
+   - No additional data required to be encoded in the request, user must be logged in
+   - The following may be set in the request body if an email should also be sent with the ticket attached:
+     ```
+      {
+        "sendToEmail": <Boolean>,
+        "type": <String (user | ca)>
+      }
+     ```
+   - Responds with:
+     - `403` if the JWT is invalid / absent
+     - `500` if the ticket could not be generated
+     - `200` if the payment was confirmed and participation was saved
+
+
+   ### /purchase --> Not Finalised
+   - The receipt number for all orders is set to be the same as the ticket code
+   - Request must be encoded in the body as raw JSON in the following format:
+     ```
+      {
+        "event": <String>,
+        "accomodation": <Boolean>,
+        "type": <String (user | ca)>
+      }
+     ```
+   - `event` must be strictly set to `pronite` or `whole_event`
+   - Responds with:
+     - `400` if the request is malformed / invalid
+     - `400` if `accomodation` is set to true but no more accomodation is available
+     - `500` if an internal server error occurs
+     - `200` if the purchase intent was successfully created
+
+   ### /verifyPurchase --> Not Finalised
+   - Request must be encoded in the body as raw JSON in the following format:
+     ```
+      {
+        "razorpay_signature": <String>, 
+        "razorpay_order_id": <String>, 
+        "razorpay_payment_id" : <String>
+      }
+     ```
+   - Responds with:
+     - `400` if the payment could not be verified
+     - `500` if the payment could not be processed
+     - `200` if the payment was confirmed and entry was saved
+
 ## Admin Endpoints
 ### /addIndividual
    - Request must be encoded in the body as raw JSON in the following format:
@@ -365,6 +381,22 @@
    - Responds with:
      - `400` if the request is malformed / invalid
      - `404` if the specified eventId could not be found
+     - `500` if an internal server error occurs
+     - `200` if the query was successful
+
+### /generateCaCode
+   - The admin must be logged in with valid credentials.
+   - The following additional fields are included in the response:
+     ```
+     {
+         "code": <String>
+     }
+     ```
+   - If the query is valid, a new `CaCode` document will be stored in the DB.
+   - ALl generated codes are valid for only one use.
+   - Responds with:
+     - `400` if the request is malformed / invalid
+     - `403` if the credentials are invalid
      - `500` if an internal server error occurs
      - `200` if the query was successful
 
@@ -430,6 +462,7 @@
   - /addGroup
   - /addIndividual
   - /getParticipants
+  - /generateCaCode
   - /verify
   - /attended
 - The above endpoints respond with:
@@ -446,47 +479,59 @@
     name: <String>,
     email: <String>,
     phone: <Number>,
-    gender: <String>,
+    password: <String>,
+    earlySignup: <Boolean>,
+    groupPurchase: <Array of MinUsers>,
+    accomodation: <Boolean>,
+    participatedIndividual: <Array of MongoDB ObjectIds>,
+    participatedGroup: <Map (eventIds => groupSchema)>,
+    purchasedTickets: <Boolean Array of 6 elements>,
+    attendedEvent: <Boolean Array of 6 elements>,
+    isAdmin: <Boolean>,
+    ticketCode: <String>,
+    gender: ,
     college: <String>,
     city: <String>,
-    password: <String>,
-    dob: <ISO Date>,
-    earlySignup: <Boolean>,
-    groupPurchase: <MinUser object array>,
-    accomodation: <Boolean>,
-    participatedIndividual: <MongoDB ObjectID array>,
-    participatedGroup: <Map (eventId string => GroupSchema)>,
-    purchasedTickets: <2 element Boolean array>,
-    attendedEvents: <6 element Boolean array>,
-    isAdmin: <Boolean>,
-    ticketCode: <String (6 character alphanumeric)>
+    dob: <ISO Date>
 }
 ```
-- Expected format of `purchasedTickets`: [pronite, whole_event]
+- Expected format of `purchasedTickets`: [pronite_1, pronite_2, pronite_3, whole_event_1, whole_event_2, whole_event_3]
 - Expected format of `attendedEvents`: [pronite_1, pronite_2, pronite_3, whole_event_1, whole_event_2, whole_event_3]
 
-  ### `GroupSchema` object for `User`
-  ```
-  {
-      groupName: <String>,
-      members: <MinUser object array>
-  }
-  ```
 
 ## `CA` object
 ```
 {
-    __id: <MongoDB ObjectID>
-    name: <String>,
-    email: <String>, 
-    phone: <Number>,
-    password: <String>,
-    gender: <String>,
-    college: <String>,
-    city: <String>,
-    dob: <ISO Date>,
-    referralCode: <String>,
-    referrals: <MinUser object array>
+  _id: <MongoDB ObjectID>
+  name: <String>,
+  email: <String>,
+  phone: <Number>,
+  gender: <String (limited by the enum ["Male", "Female", "Non-Binary"])>,
+  password: <String>,
+  referralCode: <String>,
+  referrals: <Array of MinUser>,
+  caCode: <String>,
+  earlySignup: <Boolean>,
+  groupPurchase: <Array of MinUser>,
+  accomodation: <Boolean>,
+  participatedIndividual: <MongoDB ObjectId array>
+  participatedGroup: <Map (eventIds => groupSchema)>
+  purchasedTickets: <Boolean array of 6 elements>,
+  attendedEvent: <Boolean array of 6 elements>,
+  ticketCode: <String>,
+  college: <String>,
+  city: <String>,
+  dob: <ISO Date>
+}
+```
+- Expected format of `purchasedTickets`: [pronite_1, pronite_2, pronite_3, whole_event_1, whole_event_2, whole_event_3]
+- Expected format of `attendedEvents`: [pronite_1, pronite_2, pronite_3, whole_event_1, whole_event_2, whole_event_3]
+
+## `GroupSchema` object for `User`/`CA`
+```
+{
+    groupName: <String>,
+    members: <MinUser object array>
 }
 ```
 
@@ -517,5 +562,14 @@
     "email": <String>
     "subject": <String>,
     "message": <String>
+}
+```
+
+## `CaCode` object
+```
+{
+  "code": <String>,
+  "used": <Boolean>,
+  "createdBy": <String containing admin email>
 }
 ```

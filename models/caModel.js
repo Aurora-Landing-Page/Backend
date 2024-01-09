@@ -3,6 +3,22 @@ const bcrypt = require("bcryptjs");
 const validator = require("validator");
 const minUser = require("./minUser.js");
 
+const groupSchema = mongoose.Schema(
+  {
+    groupName: {
+      type: String,
+      minLength: [3, "The group name must have a minimum of three characters"],
+      maxLength: [30, "The group name must not exceed thirty characters"],
+      required: [true, "Please specify group name"]
+    },
+
+    members: {
+      type: [minUser],
+      required: [true, "Please specify group members"]
+    }
+  }
+);
+
 const caSchema = mongoose.Schema(
   {
     name: {
@@ -30,37 +46,81 @@ const caSchema = mongoose.Schema(
 
     gender: {
       type: String,
-      required: [true, "please enter you gender"],
+      enum: ["Male", "Female", "Non-Binary"]
     },
 
-    college: {
-      type: String,
-    },
-
-    city: {
-      type: String,
-      required: [true, "please enter you city"],
-    },
-
+    
     password: {
       type: String,
       required: [true, "please enter you password"],
     },
-
-    dob: {
-      type: Date,
-      required: [true, "please enter you dob"],
-    },
-
+    
     referralCode: {
       type: String,
-      required: [true, "please add referral code"],
+      required: [true, "Please specify referral code"],
     },
-
-    // Arrays are automatically initialised to [] if not defined in create request
+    
     referrals: {
       type: [minUser],
-    }
+    },
+    
+    caCode: {
+      type: String,
+      required: [true, "Please specify CA code"]
+    },
+    
+    earlySignup: {
+      type: Boolean,
+      default: false
+    },
+
+    groupPurchase: {
+      type: [minUser]
+    },
+    
+    accomodation: {
+      type: Boolean,
+      default: false
+    },
+    
+    participatedIndividual: {
+      type: [mongoose.Types.ObjectId]
+    },
+    
+    participatedGroup: {
+      type: Map,
+      of: groupSchema
+    },
+    
+    purchasedTickets: {
+      type: [Boolean],
+      default: [false, false, false, false, false, false],
+      validate: {
+        // Set max length of array to 6 elements
+        validator: (arr) => { return arr === undefined || arr === null || (Array.isArray(arr) && arr.length === 6) },
+        message: "Invalid length of array"
+      },
+    },
+    
+    attendedEvent: {
+      type: [Boolean],
+      default: [false, false, false, false, false, false],
+      validate: {
+        // Set max length of array to 6 elements
+        validator: (arr) => { return arr === undefined || arr === null || (Array.isArray(arr) && arr.length === 6) },
+        message: "Invalid length of array"
+      }
+    },
+    
+    // 6 character unique ticket code for online verification
+    ticketCode: {
+      type: String,
+      required: [true, "Please specify the ticket code"]
+    },
+
+    college: { type: String },
+    city: { type: String },
+    dob: { type: Date }
   },
   { timestamps: true }
 );
