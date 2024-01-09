@@ -403,26 +403,26 @@
 ### /verify
    - Request must be encoded in the query as such: `/verify?ticketCode=<String>`
    - If the query is valid, the additional fields included in the response body are:
-    ```
-     {
-       name: <String>,
-       email: <String>,
-       phone: <Number>,
-       gender: <String>,
-       college: <String>,
-       city: <String>,
-       password: <String>,
-       dob: <ISO Date>,
-       earlySignup: <Boolean>,
-       groupPurchase: <MinUser object array>,
-       accomodation: <Boolean>,
-       participatedIndividual: <MongoDB ObjectID array>,
-       participatedGroup: <Map (eventId string => GroupSchema)>,
-       purchasedTickets: <7 element Boolean array>,
-       isAdmin: <Boolean>,
-       ticketCode: <String (6 character alphanumeric)>
-     }
-     ```
+  ```
+    {
+      name: <String>,
+      email: <String>,
+      phone: <Number>,
+      gender: <String>,
+      college: <String>,
+      city: <String>,
+      password: <String>,
+      dob: <ISO Date>,
+      earlySignup: <Boolean>,
+      groupPurchase: <MinUser object array>,
+      accomodation: <Boolean>,
+      participatedIndividual: <MongoDB ObjectID array>,
+      participatedGroup: <Map (eventId string => GroupSchema)>,
+      purchasedTickets: <7 element Boolean array>,
+      isAdmin: <Boolean>,
+      ticketCode: <String (6 character alphanumeric)>
+    }
+  ```
    - Responds with:
      - `400` if the request is malformed / invalid
      - `404` if the specified `ticketCode` could not be found
