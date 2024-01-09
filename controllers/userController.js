@@ -14,6 +14,7 @@ const emailController = require("./emailController")
 // Model Imports
 const { User } = require("../models/userModel");
 const CA = require("../models/caModel");
+const CaCode = require("../models/caCode")
 const Event = require("../models/event")
 const ContactUsMessage = require("../models/contactUsMessage")
 
@@ -64,20 +65,21 @@ const registerUser = asyncHandler(async (req, res, next) => {
   const { name, email, phone, gender, college, city, dob, password, referralCode } = req.body;
 
   if (!name || !email || !phone || !gender || !college || !city || !password || !dob) {
-    next(new UserError('All fields are necessary'));
+    next(new UserError('All fields are necessary')); 
+    return;
   }
 
   try {
     const checkEmail = await User.findOne({ email });
-    if (checkEmail) { next(new UserError('Email already taken')) }
+    if (checkEmail) { next(new UserError('Email already taken')); return; }
 
     const checkPhone = await User.findOne({ phone });
-    if (checkPhone) { next(new UserError('Phone Number already taken')) }
+    if (checkPhone) { next(new UserError('Phone Number already taken')) ; return; }
 
     if (referralCode) {
       const CAdoc = await CA.findOne({ referralCode })
       
-      if (!CAdoc) { next(new UserError('Invalid CA referral code')); }
+      if (!CAdoc) { next(new UserError('Invalid CA referral code')); return; }
       else {
         const referral = {
           name: name,
@@ -94,8 +96,8 @@ const registerUser = asyncHandler(async (req, res, next) => {
     const hashedPassword = bcryptjs.hashSync(password, 10);
     
     let ticketCode = generateCode(6);
-    const checkTicketCode = await CA.findOne({ ticketCode });
-    while (checkTicketCode) { ticketCode = generateCode() }
+    const checkTicketCode = await CA.findOne({ ticketCode }) && await User.findOne({ ticketCode });
+    while (checkTicketCode) { ticketCode = generateCode(6) }
     
     const newUser = new User({
       name,
@@ -111,8 +113,9 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
     try {
       await newUser.save();
-      const {password, __v, createdAt, updatedAt, _id, ...otherFields} = newUser._doc
-      successHandler(new SuccessResponse("User created successfully", 201), res, otherFields)
+      const {password, __v, createdAt, updatedAt, _id, ...otherFields} = newUser._doc;
+      emailController.sendSignupMail(name, email);
+      successHandler(new SuccessResponse("User created successfully", 201), res, otherFields);
     } catch (err) {
       console.error(err)
       next(new ServerError("User could not be created"));
@@ -124,27 +127,32 @@ const registerUser = asyncHandler(async (req, res, next) => {
 });
 
 const registerCa = asyncHandler(async (req, res, next) => {
-  const { name, email, phone, gender, college, city, password, dob} = req.body;
+  const { name, email, phone, gender, college, city, password, dob, caCode } = req.body;
     
-  if (!name || !email || !phone || !gender || !college || !city || !password || !dob) {
-    next(new UserError("All fields are necessary"))
+  if (!name || !email || !phone || !gender || !college || !city || !password || !dob || !caCode) {
+    next(new UserError("All fields are necessary"));
+    return;
   }
+
+  const checkEmail = await CA.findOne({ email });
+  if (checkEmail) { next(new UserError('Email already taken')); return; }
+
+  const checkPhone = await CA.findOne({ phone });
+  if (checkPhone) { next(new UserError('Phone number already taken')); return; }
+  
+  const checkCode = await CaCode.findOne({ code: caCode });
+  if (!checkCode) { next(new UserError("Invalid CA code")); return; }
+  else if (checkCode._doc.used == true) { next(new UserError("CA signup code already used, contact admin")); return; }
   
   try {
-    const checkEmail = await CA.findOne({ email });
-    if (checkEmail) { next(new UserError('Email already taken')) }
-
-    const checkPhone = await CA.findOne({ phone });
-    if (checkPhone) { next(new UserError('Phone Number already taken')) }    
-    
     let referralCode = generateCode();
     const checkReferralCode = await CA.findOne({ referralCode });
-    
-    // Regenerate referral code until a unique one is obtained
-    while (checkReferralCode) {
-      referralCode = generateCode();
-    }
+    while (checkReferralCode) { referralCode = generateCode(); }
 
+    let ticketCode = generateCode(6);
+    const checkTicketCode = await CA.findOne({ ticketCode }) && await User.findOne({ ticketCode });
+    while (checkTicketCode) { ticketCode = generateCode(6) }
+    
     const hashedPassword = bcryptjs.hashSync(password,10);
     const newCa = new CA({
       name,
@@ -155,13 +163,20 @@ const registerCa = asyncHandler(async (req, res, next) => {
       city,
       password: hashedPassword,
       dob,
-      referralCode: referralCode
+      referralCode: referralCode,
+      ticketCode,
+      caCode
     });
 
     try {
+      console.log(checkCode)
+      checkCode.used = true
+      await checkCode.save();
+      
       await newCa.save();
-      const {password, __v, createdAt, updatedAt, _id, ...otherFields} = newCa._doc
-      successHandler(new SuccessResponse("CA created successfully", 201), res, otherFields)
+      const {password, __v, createdAt, updatedAt, _id, ...otherFields} = newCa._doc;
+      emailController.sendSignupMail(name, email);
+      successHandler(new SuccessResponse("CA created successfully", 201), res, otherFields);
     } catch (err) {
       console.error(err)
       next(new ServerError("CA could not be created"))
@@ -216,7 +231,7 @@ const getUserData = asyncHandler(async (req, res, next) => {
 
   try {
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) { next(new UserError("Invalid JWT", 403)) }
+      if (err) { next(new UserError("Invalid JWT", 403)); return; }
       else { id = decoded.id }
     })
 
@@ -239,7 +254,7 @@ const getCaData = asyncHandler(async (req, res, next) => {
 
   try {
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) { next(new UserError("Invalid JWT", 403)) }
+      if (err) { next(new UserError("Invalid JWT", 403)); return; }
       else { id = decoded.id }
     })
 
@@ -316,10 +331,11 @@ const generateQR = asyncHandler(async(req, res, next) => {
     if (!userDoc) {
       next(new UserError("Invalid credentials"))
     } else {
-      const { ticketCode } = userDoc._doc
+      const { email, name, ticketCode } = userDoc._doc
       const ticketImage = await generateTicket(ticketCode)
       const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
-  
+      if (sendToEmail) { await emailController.sendQRMail(email, name, buffer, ticketCode) }
+
       res.setHeader('Content-Type', 'image/png');
       res.send(buffer);
     }
@@ -327,7 +343,37 @@ const generateQR = asyncHandler(async(req, res, next) => {
     console.error(error)
     next(new ServerError("QR Code could not be generated"))
   }
+})
 
+const generateCaCode = asyncHandler(async(req, res, next) => {
+  const token = req.cookies.jwt;
+  let id;
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) { next(new UserError("Invalid JWT", 403)) }
+    else { id = decoded.id }
+  })
+  
+  try {
+    const userDoc = await User.findById(id)
+    if (!userDoc) {
+      next(new UserError("Invalid credentials"))
+    } else {
+      const { email } = userDoc._doc
+
+      let code = generateCode();
+      const checkCaCode = await CaCode.findOne({ code });
+      while (checkCaCode) { code = generateCode(); }
+      
+      const newCode = new CaCode({ code, createdBy: email })
+      await newCode.save()
+
+      successHandler(new SuccessResponse("New CA code has been generated"), res, { code })
+    }
+  } catch (error) {
+    console.error(error)
+    next(new ServerError("CA Code could not be generated"))
+  }
 })
 
 module.exports = { 
@@ -341,5 +387,7 @@ module.exports = {
   forgotPass, 
   contactUs,
   generateQR,
-  generateCode
+  generateCode,
+  generateTicket,
+  generateCaCode
 };

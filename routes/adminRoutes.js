@@ -4,6 +4,7 @@ const router = express.Router();
 
 // User Imports
 const eventController = require("../controllers/eventController")
+const userController = require("../controllers/userController")
 const { requireAdmin } = require("../middlewares/requireAuth")
 
 // A small set of admin accounts will be pre-generated and shared with trusted individuals
@@ -11,6 +12,7 @@ const { requireAdmin } = require("../middlewares/requireAuth")
 router.post("/addIndividual", requireAdmin, eventController.addIndividual);
 router.post("/addGroup", requireAdmin, eventController.addGroup);
 router.get("/getParticipants", requireAdmin, eventController.getParticipants);
+router.get("/generateCaCode", requireAdmin, userController.generateCaCode);
 router.get("/verify", requireAdmin, eventController.verify);
 router.post("/attended", requireAdmin, eventController.hasAttended);
 

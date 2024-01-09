@@ -44,17 +44,11 @@ const userSchema = mongoose.Schema(
       unique: [true, "phone number already taken"],
     },
     
-    // Optional Fields
-    gender: { type: String },
-    college: { type: String },
-    city: { type: String },
-    dob: { type: Date },
-    
     password: {
       type: String,
-      required: [true, "please enter your password"],
+      required: [true, "please enter your password"]
     },
-
+    
     earlySignup: {
       type: Boolean,
       default: false
@@ -63,31 +57,31 @@ const userSchema = mongoose.Schema(
     groupPurchase: {
       type: [minUser]
     },
-
+    
     accomodation: {
       type: Boolean,
       default: false
     },
-
+    
     participatedIndividual: {
       type: [mongoose.Types.ObjectId]
     },
-
+    
     participatedGroup: {
       type: Map,
       of: groupSchema
     },
-
+    
     purchasedTickets: {
       type: [Boolean],
-      default: [false, false],
+      default: [false, false, false, false, false, false],
       validate: {
-        // Set max length of array to 2 elements
-        validator: (arr) => { return arr === undefined || arr === null || (Array.isArray(arr) && arr.length === 2) },
+        // Set max length of array to 6 elements
+        validator: (arr) => { return arr === undefined || arr === null || (Array.isArray(arr) && arr.length === 6) },
         message: "Invalid length of array"
       },
     },
-
+    
     attendedEvent: {
       type: [Boolean],
       default: [false, false, false, false, false, false],
@@ -95,8 +89,9 @@ const userSchema = mongoose.Schema(
         // Set max length of array to 6 elements
         validator: (arr) => { return arr === undefined || arr === null || (Array.isArray(arr) && arr.length === 6) },
         message: "Invalid length of array"
-    }},
-    
+      }
+    },
+      
     isAdmin: {
       type: Boolean,
       default: false
@@ -104,8 +99,18 @@ const userSchema = mongoose.Schema(
     
     // 6 character unique ticket code for online verification
     ticketCode: {
-      type: String
-    }
+      type: String,
+      required: [true, "Please specify the ticket code"]
+    },
+
+    // Optional Fields
+    gender: { 
+      type: String,
+      enum: ["Male", "Female", "Non-Binary"] 
+    },
+    college: { type: String },
+    city: { type: String },
+    dob: { type: Date },
   },
   { timestamps: true }
 );
