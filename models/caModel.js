@@ -3,22 +3,6 @@ const bcrypt = require("bcryptjs");
 const validator = require("validator");
 const minUser = require("./minUser.js");
 
-const groupSchema = mongoose.Schema(
-  {
-    groupName: {
-      type: String,
-      minLength: [3, "The group name must have a minimum of three characters"],
-      maxLength: [30, "The group name must not exceed thirty characters"],
-      required: [true, "Please specify group name"]
-    },
-
-    members: {
-      type: [minUser],
-      required: [true, "Please specify group members"]
-    }
-  }
-);
-
 const caSchema = mongoose.Schema(
   {
     name: {
