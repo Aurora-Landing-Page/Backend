@@ -129,7 +129,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
 const registerCa = asyncHandler(async (req, res, next) => {
   const { name, email, phone, gender, college, city, password, dob, caCode } = req.body;
     
-  if (!name || !email || !phone || !gender || !college || !city || !password || !dob || !caCode) {
+  if (!name || !email || !phone || !gender || !college || !city || !password || !dob) {
     next(new UserError("All fields are necessary"));
     return;
   }
@@ -139,10 +139,6 @@ const registerCa = asyncHandler(async (req, res, next) => {
 
   const checkPhone = await CA.findOne({ phone });
   if (checkPhone) { next(new UserError('Phone number already taken')); return; }
-  
-  const checkCode = await CaCode.findOne({ code: caCode });
-  if (!checkCode) { next(new UserError("Invalid CA code")); return; }
-  else if (checkCode._doc.used == true) { next(new UserError("CA signup code already used, contact admin")); return; }
   
   try {
     let referralCode = generateCode();
@@ -164,15 +160,10 @@ const registerCa = asyncHandler(async (req, res, next) => {
       password: hashedPassword,
       dob,
       referralCode: referralCode,
-      ticketCode,
-      caCode
+      ticketCode
     });
 
     try {
-      console.log(checkCode)
-      checkCode.used = true
-      await checkCode.save();
-      
       await newCa.save();
       const {password, __v, createdAt, updatedAt, _id, ...otherFields} = newCa._doc;
       emailController.sendSignupMail(name, email);

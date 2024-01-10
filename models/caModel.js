@@ -64,34 +64,6 @@ const caSchema = mongoose.Schema(
       type: [minUser],
     },
     
-    caCode: {
-      type: String,
-      required: [true, "Please specify CA code"]
-    },
-    
-    earlySignup: {
-      type: Boolean,
-      default: false
-    },
-
-    groupPurchase: {
-      type: [minUser]
-    },
-    
-    accomodation: {
-      type: Boolean,
-      default: false
-    },
-    
-    participatedIndividual: {
-      type: [mongoose.Types.ObjectId]
-    },
-    
-    participatedGroup: {
-      type: Map,
-      of: groupSchema
-    },
-    
     purchasedTickets: {
       type: [Boolean],
       default: [false, false, false, false, false, false],
