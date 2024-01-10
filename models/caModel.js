@@ -47,12 +47,6 @@ const caSchema = mongoose.Schema(
     referrals: {
       type: [minUser],
     },
-    
-    // 6 character unique ticket code for online verification
-    ticketCode: {
-      type: String,
-      required: [true, "Please specify the ticket code"]
-    },
 
     college: { type: String },
     city: { type: String },
