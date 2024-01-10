@@ -64,26 +64,6 @@ const caSchema = mongoose.Schema(
       type: [minUser],
     },
     
-    purchasedTickets: {
-      type: [Boolean],
-      default: [false, false, false, false, false, false],
-      validate: {
-        // Set max length of array to 6 elements
-        validator: (arr) => { return arr === undefined || arr === null || (Array.isArray(arr) && arr.length === 6) },
-        message: "Invalid length of array"
-      },
-    },
-    
-    attendedEvent: {
-      type: [Boolean],
-      default: [false, false, false, false, false, false],
-      validate: {
-        // Set max length of array to 6 elements
-        validator: (arr) => { return arr === undefined || arr === null || (Array.isArray(arr) && arr.length === 6) },
-        message: "Invalid length of array"
-      }
-    },
-    
     // 6 character unique ticket code for online verification
     ticketCode: {
       type: String,
