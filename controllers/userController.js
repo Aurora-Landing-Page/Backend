@@ -195,6 +195,7 @@ const loginCa = asyncHandler(async (req, res, next) => {
     successHandler(new SuccessResponse(`Logged in`, 202), res, { id: user._id })
   } catch (err) {
     next(new UserError("Invalid username / password", 403))
+    console.log(err);
   }
 })
 
