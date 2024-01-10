@@ -20,7 +20,7 @@ router.post("/contactUs", userController.contactUs);
 
 // Protected Routes (available to registered users / admins / CAs)
 // router.get("/getUserData", requireAuth, userController.getUserData);
-// router.get("/getCaData", requireAuth, userController.getCaData);
+router.get("/getCaData", requireAuth, userController.getCaData);
 // router.get("/generateTicket", requireAuth, userController.generateQR);
 // router.post("/participateIndividual", requireAuth, eventController.participateIndividual);
 // router.post("/participateGroup", requireAuth, eventController.participateGroup);
