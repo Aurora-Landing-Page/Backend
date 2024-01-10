@@ -14,7 +14,6 @@ const emailController = require("./emailController")
 // Model Imports
 const { User } = require("../models/userModel");
 const CA = require("../models/caModel");
-const CaCode = require("../models/caCode")
 const Event = require("../models/event")
 const ContactUsMessage = require("../models/contactUsMessage")
 
@@ -195,7 +194,6 @@ const loginCa = asyncHandler(async (req, res, next) => {
     successHandler(new SuccessResponse(`Logged in`, 202), res, { id: user._id })
   } catch (err) {
     next(new UserError("Invalid username / password", 403))
-    console.log(err);
   }
 })
 
@@ -309,9 +307,15 @@ const contactUs = asyncHandler(async (req, res, next) => {
 })
 
 const generateQR = asyncHandler(async(req, res, next) => {
-  const { sendToEmail } = req.body
+  const { sendToEmail, type } = req.body
   const token = req.cookies.jwt;
-  let id;
+  let id, model;
+
+  if (!type) { next(new UserError("Please specify user type")); return; }
+  else if (type != "user" && type != "ca") { next(new UserError("Invalid user type")); return; }
+  
+  if (type == "user") { model = User }
+  if (type == "ca") { model = CA }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) { next(new UserError("Invalid JWT", 403)) }
@@ -319,7 +323,7 @@ const generateQR = asyncHandler(async(req, res, next) => {
   })
   
   try {
-    const userDoc = await User.findById(id)
+    const userDoc = await model.findById(id)
     if (!userDoc) {
       next(new UserError("Invalid credentials"))
     } else {
@@ -337,37 +341,6 @@ const generateQR = asyncHandler(async(req, res, next) => {
   }
 })
 
-const generateCaCode = asyncHandler(async(req, res, next) => {
-  const token = req.cookies.jwt;
-  let id;
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) { next(new UserError("Invalid JWT", 403)) }
-    else { id = decoded.id }
-  })
-  
-  try {
-    const userDoc = await User.findById(id)
-    if (!userDoc) {
-      next(new UserError("Invalid credentials"))
-    } else {
-      const { email } = userDoc._doc
-
-      let code = generateCode();
-      const checkCaCode = await CaCode.findOne({ code });
-      while (checkCaCode) { code = generateCode(); }
-      
-      const newCode = new CaCode({ code, createdBy: email })
-      await newCode.save()
-
-      successHandler(new SuccessResponse("New CA code has been generated"), res, { code })
-    }
-  } catch (error) {
-    console.error(error)
-    next(new ServerError("CA Code could not be generated"))
-  }
-})
-
 module.exports = { 
   registerUser, 
   registerCa, 
@@ -380,6 +353,5 @@ module.exports = {
   contactUs,
   generateQR,
   generateCode,
-  generateTicket,
-  generateCaCode
+  generateTicket
 };
