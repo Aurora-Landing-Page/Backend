@@ -126,7 +126,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
 });
 
 const registerCa = asyncHandler(async (req, res, next) => {
-  const { name, email, phone, gender, college, city, password, dob, caCode } = req.body;
+  const { name, email, phone, gender, college, city, password, dob } = req.body;
     
   if (!name || !email || !phone || !gender || !college || !city || !password || !dob) {
     next(new UserError("All fields are necessary"));
@@ -143,10 +143,6 @@ const registerCa = asyncHandler(async (req, res, next) => {
     let referralCode = generateCode();
     const checkReferralCode = await CA.findOne({ referralCode });
     while (checkReferralCode) { referralCode = generateCode(); }
-
-    let ticketCode = generateCode(6);
-    const checkTicketCode = await CA.findOne({ ticketCode }) && await User.findOne({ ticketCode });
-    while (checkTicketCode) { ticketCode = generateCode(6) }
     
     const hashedPassword = bcryptjs.hashSync(password,10);
     const newCa = new CA({
@@ -159,7 +155,6 @@ const registerCa = asyncHandler(async (req, res, next) => {
       password: hashedPassword,
       dob,
       referralCode: referralCode,
-      ticketCode
     });
 
     try {
@@ -307,15 +302,9 @@ const contactUs = asyncHandler(async (req, res, next) => {
 })
 
 const generateQR = asyncHandler(async(req, res, next) => {
-  const { sendToEmail, type } = req.body
+  const { sendToEmail } = req.body
   const token = req.cookies.jwt;
-  let id, model;
-
-  if (!type) { next(new UserError("Please specify user type")); return; }
-  else if (type != "user" && type != "ca") { next(new UserError("Invalid user type")); return; }
-  
-  if (type == "user") { model = User }
-  if (type == "ca") { model = CA }
+  let id;
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) { next(new UserError("Invalid JWT", 403)) }
@@ -323,7 +312,7 @@ const generateQR = asyncHandler(async(req, res, next) => {
   })
   
   try {
-    const userDoc = await model.findById(id)
+    const userDoc = await User.findById(id)
     if (!userDoc) {
       next(new UserError("Invalid credentials"))
     } else {

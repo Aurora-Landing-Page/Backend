@@ -227,7 +227,7 @@
      ```
      {
          "email": <String>,
-         "type": <String>
+         "type": <String (user | ca)>
      }
      ```
    - The type must be set to `user` or `CA`
@@ -259,8 +259,7 @@
    - Request must be encoded in the body as raw JSON in the following format:
      ```
       {
-        "eventId": <String (individual event's ObjectId)>,
-        "type": <String (user | ca)>
+        "eventId": <String (individual event's ObjectId)>
       }
      ```
    - Responds with:
@@ -274,7 +273,6 @@
      ```
       {
         "eventId": <String (group event's ObjectId)>,
-        "type": <String (user | ca)>,
         "groupName": <String>,
         "members": <Array of MinUser Schema including leader>
       }
@@ -291,7 +289,6 @@
      ```
       {
         "sendToEmail": <Boolean>,
-        "type": <String (user | ca)>
       }
      ```
    - Responds with:
@@ -307,7 +304,6 @@
       {
         "event": <String>,
         "accomodation": <Boolean>,
-        "type": <String (user | ca)>
       }
      ```
    - `event` must be strictly set to `pronite` or `whole_event`
@@ -373,7 +369,7 @@
      ```
      {
          "eventId": <String>,
-         "type": <String>
+         "type": <String (individual | group)>
      }
      ```
    - If the query is valid, the contactUsMessage will be stored in the DB
@@ -493,24 +489,13 @@
   password: <String>,
   referralCode: <String>,
   referrals: <Array of MinUser>,
-  caCode: <String>,
-  earlySignup: <Boolean>,
-  groupPurchase: <Array of MinUser>,
-  accomodation: <Boolean>,
-  participatedIndividual: <MongoDB ObjectId array>
-  participatedGroup: <Map (eventIds => groupSchema)>
-  purchasedTickets: <Boolean array of 6 elements>,
-  attendedEvent: <Boolean array of 6 elements>,
-  ticketCode: <String>,
   college: <String>,
   city: <String>,
   dob: <ISO Date>
 }
 ```
-- Expected format of `purchasedTickets`: [pronite_1, pronite_2, pronite_3, whole_event_1, whole_event_2, whole_event_3]
-- Expected format of `attendedEvents`: [pronite_1, pronite_2, pronite_3, whole_event_1, whole_event_2, whole_event_3]
 
-## `GroupSchema` object for `User`/`CA`
+## `GroupSchema` object for `User`
 ```
 {
     groupName: <String>,
