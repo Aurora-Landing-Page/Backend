@@ -39,8 +39,7 @@
   ```
 -  The field `stackTrace` is defined only if NODE_ENV environment variable is set to development.
 
-## Protected (requireAuth) endpoints 
-### All of the following (except /getUserData, /getCaData amd /generateTicket) are disabled in the current version
+## Protected (requireAuth) endpoints
 - The following endpoints are protected by the `requireAuth` middleware and require a valid JWT cookie to be present in the user request:
   - /getUserData
   - /getCaData
@@ -55,7 +54,7 @@
   - `403` if the JWT is invalid / absent
   - The requested URL if the JWT is present and valid
 
-## Ultra Protected (requireAdmin) endpoints (all of the following are disabled in the current version)
+## Ultra Protected (requireAdmin) endpoints
 - The following endpoints are protected by the `requireAdmin` middleware and require a valid admin JWT cookie:
   - /addGroup
   - /addIndividual
@@ -543,6 +542,7 @@
 
 ## `PaymentReceipt` object
 ```
+{
   orderId: <String (Razorpay order ID)>,
   paymentId: <String (Razorpay payment ID)>,
   receiptId: <String (Internal receipt reference)>,
@@ -550,4 +550,5 @@
   ticketCode: <String (ticket code of user making the payment)>, 
   data: <Object whose fields determine what will happen after the purchase is verified>,
   verified: <Boolean>
+}
 ```
