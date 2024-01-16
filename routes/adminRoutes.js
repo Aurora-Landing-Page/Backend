@@ -14,6 +14,7 @@ router.post("/addGroup", requireAdmin, eventController.addGroup);
 router.get("/getParticipants", requireAdmin, eventController.getParticipants);
 router.get("/verify", requireAdmin, eventController.verify);
 router.post("/attended", requireAdmin, eventController.hasAttended);
+router.get("/getReceipt", requireAdmin, eventController.getReceipt);
 
 // Exporting Router
 module.exports = router;

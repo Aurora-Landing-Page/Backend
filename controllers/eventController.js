@@ -2,7 +2,6 @@
 const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
-const qrcode = require("qrcode");
 const Jimp = require("jimp");
 const Razorpay = require("razorpay")
 
@@ -17,7 +16,7 @@ const emailController = require("./emailController")
 
 // Model Imports
 const { User, Group } = require("../models/userModel");
-const CA = require("../models/caModel");
+const Receipt = require("../models/paymentReceipt");
 const event = require("../models/event")
 
 // Import environment variables
@@ -30,11 +29,11 @@ const razorpayInstance = new Razorpay({
   key_secret: process.env.RAZORPAY_SECRET
 });
 
-const sendQR = async(email, name, ticketCode) => {
+const sendQR = async(email, name, ticketCode, receiptId) => {
   try {
     const ticketImage = await userController.generateTicket(ticketCode)
     const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
-    await emailController.sendQRMail(email, name, buffer, ticketCode);
+    await emailController.sendQRMail(email, name, buffer, ticketCode, receiptId);
   } catch (error) {
     console.error(error)
     throw new Error(error)
@@ -140,114 +139,6 @@ const addGroup = asyncHandler(async (req, res, next) => {
         next(new ServerError("Details could not be saved"))
       }
     }
-  }
-})
-
-const participateIndividual = asyncHandler(async (req, res, next) => {
-  const { eventId } = req.body;
-  const token = req.cookies.jwt;
-  let id;
-
-  if (!eventId) { next(new UserError("Malformed request!")) }
-  else {
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) { next(new UserError("Invalid JWT", 403)) } 
-      else { id = decoded.id }
-    })
-    
-    const userDoc = await User.findById(id)
-    const eventDoc = await event.findById(eventId)
-
-    if (eventDoc) {
-      if (eventDoc.isGroup) {
-        next(new UserError("Malformed request"))
-      } else {
-        const userObjId = new mongoose.Types.ObjectId(id)
-        const eventObjId = new mongoose.Types.ObjectId(eventId)
-
-        const alreadyParticipated = userDoc.participatedIndividual.some((id) => {
-          return id.equals(eventObjId)
-        })
-
-        if (alreadyParticipated) {
-          next(new UserError("Already participated in this event!", 409))
-        } else {
-          // Defaults to true for now as confirmParticipationPayment has not been implemented
-          const paid = true;
-  
-          if (paid) {
-            try {
-              eventDoc.participants.push(userObjId)
-              userDoc.participatedIndividual.push(eventObjId)
-
-              await eventDoc.save()
-              await userDoc.save()
-              successHandler(new SuccessResponse("Participation confirmed in event"), res)
-            } catch (error) {
-              console.error(error)
-              next(new ServerError("Details could not be saved"))
-            }
-          } else { next(new UserError("Payment could not be confirmed", 402)) }
-        }
-      }
-    } else { next(new UserError("Invalid event ID")) }
-  }
-})
-
-const participateGroup = asyncHandler(async (req, res, next) => {
-  const { eventId, groupName, members } = req.body;
-  const token = req.cookies.jwt;
-  let id;
-  
-  members.forEach((member) => {
-    if (!member.name || !member.email || !member.phone) { next(new UserError("Invalid members array, all fields are necessary!")) }
-    else { return; }
-  })
-
-  if (!eventId || !groupName || !members) { next(new UserError("Malformed request!")) }
-  else {
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) { next(new UserError("Invalid JWT", 403)) }
-      else { id = decoded.id }
-    })
-
-    const userDoc = await User.findById(id)
-    const eventDoc = await event.findById(eventId)
-    if (eventDoc) {
-      if (!eventDoc.isGroup) {
-        next(new UserError("Malformed request"))
-      } else {
-        const userObjId = new mongoose.Types.ObjectId(id)
-        
-        if (userDoc && userDoc._doc.participatedGroup && userDoc._doc.participatedGroup.has(eventId)) {
-          next(new UserError("Already participated in this event!", 409))
-        } else {
-          // Defaults to true for now as confirmParticipationPayment has not been implemented
-          const paid = true;
-  
-          if (paid) {
-            try {
-              if (!userDoc.participatedGroup) {
-                userDoc.participatedGroup = new Map();
-              }
-  
-              eventDoc.participants.push(userObjId)
-
-              const groupInstance = new Group({ groupName, members })
-              userDoc.participatedGroup.set(eventId, groupInstance)
-              userDoc.markModified("participatedGroup")
-  
-              await eventDoc.save()
-              await userDoc.save()
-              successHandler(new SuccessResponse("Participation confirmed in event"), res)
-            } catch (error) {
-              console.error(error)
-              next(new ServerError("Details could not be saved"))
-            }
-          } else { next(new UserError("Payment could not be confirmed", 402)) }
-        }
-      }
-    } else { next(new UserError("Invalid event ID")) }
   }
 })
 
@@ -367,6 +258,27 @@ const getParticipants = asyncHandler(async (req, res, next) => {
     }
 })
 
+const getReceipt = asyncHandler(async(req, res, next) => {
+  const { receiptId } = req.query
+
+  if (!receiptId) {
+    next(new UserError("Invalid query"))
+  } else {
+    try {
+      const receiptDoc = await Receipt.findOne({ receiptId })
+      const {_id, ...otherFields} = receiptDoc._doc
+      if (receiptDoc) {
+        successHandler(new SuccessResponse("User Found!"), res, otherFields)
+      } else {
+        next(new NotFoundError("Receipt ID could not be found"))
+      }
+    } catch (error) {
+      console.error(error)
+      next(new ServerError("Receipt ID could not be resolved"))
+    }
+  }
+})
+
 const verify = asyncHandler(async(req, res, next) => {
   const { ticketCode } = req.query
 
@@ -435,9 +347,8 @@ const hasAttended = asyncHandler(async(req, res, next) => {
 
 module.exports = {
   sendQR,
-  participateIndividual, 
-  participateGroup, 
   getParticipants,
+  getReceipt,
   addIndividual, 
   addGroup, 
   verify,

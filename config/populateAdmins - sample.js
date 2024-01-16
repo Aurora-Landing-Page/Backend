@@ -9,6 +9,17 @@ const { User } = require("../models/userModel")
 const dotenv = require("dotenv");
 dotenv.config();
 
+function generateCode(length = 8) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let referralCode = '';
+
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        referralCode += characters[randomIndex];
+    }
+    return referralCode;
+};
+
 const admins = [
     {
         name: "John Doe",
@@ -39,13 +50,17 @@ const populate = async () => {
     if (await connectDb()) {
         admins.forEach(async (element) => {
             const hashedPassword = bcryptjs.hashSync(element.password, 10);
+            let ticketCode = generateCode(6);
+            const checkTicketCode = await User.findOne({ ticketCode });
+            while (checkTicketCode) { ticketCode = generateCode(6) }
 
             const newAdmin = new User({
                 name: element.name,
                 email: element.email,
                 phone: element.phone,
                 password: hashedPassword,
-                isAdmin: true
+                isAdmin: true,
+                ticketCode
             });
 
             try {

@@ -193,17 +193,16 @@ const verifyPurchase = asyncHandler(async (req, res, next) => {
   if (!razorpaySignature || !razorpayOrderId || !razorpayPaymentId) {
     next(new UserError("Malformed request"));
   } else {
-    // Implementation pending, would look something like this:
-    // Works by comparing the signature received from user to the hash generated using payment_id and order_id
-
+    // Verify the signature and perform post payment methods
+    
     const hmac = crypto.createHmac("sha256", key_secret);
     hmac.update(razorpayOrderId + "|" + razorpayPaymentId);
     const generatedSignature = hmac.digest("hex");
 
-    // Verify the signature and perform post payment methods
     try {
       if (razorpaySignature === generatedSignature) {
         const receiptDoc = await Receipt.findOne({ orderId: razorpayOrderId });
+        const receiptId = receiptDoc._doc.receiptId;
         receiptDoc.paymentId = razorpayPaymentId;
 
         const { data } = receiptDoc._doc;
@@ -214,14 +213,14 @@ const verifyPurchase = asyncHandler(async (req, res, next) => {
 
         if (data.type == "purchase_individual") {
             userDoc.purchasedTickets = data.purchasedTickets;
-            await eventController.sendQR(userDoc._doc.email, userDoc._doc.name, userDoc._doc.ticketCode)
+            await eventController.sendQR(userDoc._doc.email, userDoc._doc.name, userDoc._doc.ticketCode, receiptId);
         } else if (data.type == "purchase_group") {
             userDoc.purchasedTickets = data.purchasedTickets;
             userDoc.groupPurchase = data.members;
 
-            await eventController.sendQR(userDoc._doc.email, userDoc._doc.name, userDoc._doc.ticketCode);
+            await eventController.sendQR(userDoc._doc.email, userDoc._doc.name, userDoc._doc.ticketCode, receiptId);
             data.members.forEach(async (member) => {
-                await eventController.sendQR(member.email, member.name, userDoc._doc.ticketCode);
+                await eventController.sendQR(member.email, member.name, userDoc._doc.ticketCode, receiptId);
             });
         } else if (data.type == "participate_individual") {
             const eventDoc = await Event.findById(data.eventId);
@@ -230,7 +229,7 @@ const verifyPurchase = asyncHandler(async (req, res, next) => {
             eventDoc.participants.push(userObjId);
             userDoc.participatedIndividual.push(eventObjId);
 
-            await eventController.sendQR(userDoc._doc.email, userDoc._doc.name, userDoc._doc.ticketCode);
+            await eventController.sendQR(userDoc._doc.email, userDoc._doc.name, userDoc._doc.ticketCode, receiptId);
             await eventDoc.save();
         } else if (data.type == "participate_group") {
             const eventDoc = await Event.findById(data.eventId);
@@ -243,9 +242,9 @@ const verifyPurchase = asyncHandler(async (req, res, next) => {
             userDoc.participatedGroup.set(data.eventId, groupInstance);
             userDoc.markModified("participatedGroup");
 
-            await eventController.sendQR(userDoc._doc.email, userDoc._doc.name, userDoc._doc.ticketCode);
+            await eventController.sendQR(userDoc._doc.email, userDoc._doc.name, userDoc._doc.ticketCode, receiptId);
             data.members.forEach(async (member) => {
-                await eventController.sendQR(member.email, member.name, userDoc._doc.ticketCode);
+                await eventController.sendQR(member.email, member.name, userDoc._doc.ticketCode, receiptId);
             });
             await eventDoc.save();
         }

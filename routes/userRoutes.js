@@ -22,8 +22,6 @@ router.post("/contactUs", userController.contactUs);
 router.get("/getUserData", requireAuth, userController.getUserData);
 router.get("/getCaData", requireAuth, userController.getCaData);
 router.get("/generateTicket", requireAuth, userController.generateQR);
-router.post("/participateIndividual", requireAuth, eventController.participateIndividual);
-router.post("/participateGroup", requireAuth, eventController.participateGroup);
 
 // Payment Routes
 router.get("/getKey", requireAuth, paymentController.sendKey)

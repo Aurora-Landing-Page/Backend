@@ -39,6 +39,34 @@
   ```
 -  The field `stackTrace` is defined only if NODE_ENV environment variable is set to development.
 
+## Protected (requireAuth) endpoints 
+### All of the following (except /getUserData, /getCaData amd /generateTicket) are disabled in the current version
+- The following endpoints are protected by the `requireAuth` middleware and require a valid JWT cookie to be present in the user request:
+  - /getUserData
+  - /getCaData
+  - /getParticipants
+  - /generateTicket
+  - /purchase
+  - /verifyPurchase
+  - /getKey
+  - /createOrder
+  - /verifyOrder
+- The above endpoints respond with:
+  - `403` if the JWT is invalid / absent
+  - The requested URL if the JWT is present and valid
+
+## Ultra Protected (requireAdmin) endpoints (all of the following are disabled in the current version)
+- The following endpoints are protected by the `requireAdmin` middleware and require a valid admin JWT cookie:
+  - /addGroup
+  - /addIndividual
+  - /getParticipants
+  - /getReceipt
+  - /verify
+  - /attended
+- The above endpoints respond with:
+  - `403` if the JWT is invalid / absent or if the token does not correspond to an admin account
+  - The requested URL if the JWT is present and valid
+
 # API Endpoints
 ## User Endpoints
    ### /registerUser
@@ -114,6 +142,70 @@
      - `404` if the JWT is valid but the corresponding CA does not exist in the DB
      - `500` if an internal server error occurs
      - `200` if the specified User was found
+
+  ## A working demo of payments is present in the to-be-implemented directory
+   ### /getKey
+   - Returns the Razorpay key (to the account which will receive payments).
+   - The following additional fields are included in the response
+     ```
+     {
+       key: <String>
+     }
+     ```
+   - Responds with:
+     - `403` if the JWT is invalid / absent
+     - `200` if the key was returned successfully
+
+   ### /createOrder
+   - The following fields must be added to the request body as JSON:
+     ```
+     { 
+        eventId: <String (MongoDB ObjectId of the event)>, 
+        eventType: <String (group | individual)>, 
+        groupName: <String>, 
+        members: <Array of MinUsers>, 
+        accomodation: <Boolean>, 
+        pronite: <Boolean>, 
+        whole_event: <Boolean>, 
+        purchaseType: <String (individual | group)>
+     }
+     ```
+   - The fields from the created Razorpay order are included as additional fields in the response:
+     ```
+      {
+        id: <String (Razorpay Order ID)>,
+        entity: <String>,
+        amount: <Number (amount to be paid in paise)>,
+        amount_paid: <Number>,
+        amount_due: <Number>,
+        currency: <String ('INR')>,
+        receipt: <String (internal receipt ID)>,
+        status: <String>,
+        attempts: <Number>,
+        created_at: <Epoch Timestamp>
+      }
+     ```
+   - Responds with:
+     - `400` if the request is malformed in any way
+     - `403` if the JWT is invalid / absent
+     - `404` if the either the user / event is not found in the DB
+     - `500` if an internal server error occurs
+     - `200` if the order was successfully created
+
+   ### /verifyOrder
+   - The following fields must be added to the request body as JSON:
+     ```
+     {
+        razorpaySignature: <Hash>, 
+        razorpayOrderId: <String>, 
+        razorpayPaymentId: <String>
+     }
+     ```
+   - If the verification was successful, an additional `success: true` field is included in the response body
+   - Responds with:
+     - `400` if the request is malformed / order could not be verified
+     - `500` if an internal server error occurs and payment could not be processed
+     - `200` if the payment was successful, verified and confirmed
 
 ## CA Endpoints
    ### /registerCa
@@ -255,34 +347,6 @@
      - `500` if an internal server error occurs
      - `200` if the message was successfully saved in the DB
 
-   ### /participateIndividual --> Payments not yet functional
-   - Request must be encoded in the body as raw JSON in the following format:
-     ```
-      {
-        "eventId": <String (individual event's ObjectId)>
-      }
-     ```
-   - Responds with:
-     - `403` if the JWT is invalid / absent
-     - `409` if the user has already participated in the event 
-     - `402` if the payment could not be confirmed
-     - `200` if the payment was confirmed and participation was saved
-
-   ### /participateGroup --> Payments not yet functional
-   - Request must be encoded in the body as raw JSON in the following format:
-     ```
-      {
-        "eventId": <String (group event's ObjectId)>,
-        "groupName": <String>,
-        "members": <Array of MinUser Schema including leader>
-      }
-     ```
-   - Responds with:
-     - `403` if the JWT is invalid / absent
-     - `409` if the user has already participated in the event 
-     - `402` if the payment could not be confirmed
-     - `200` if the payment was confirmed and participation was saved
-
    ### /generateTicket
    - No additional data required to be encoded in the request, user must be logged in
    - The following may be set in the request body if an email should also be sent with the ticket attached:
@@ -296,36 +360,6 @@
      - `500` if the ticket could not be generated
      - `200` if the payment was confirmed and participation was saved
 
-
-   ### /purchase --> Not Finalised
-   - The receipt number for all orders is set to be the same as the ticket code
-   - Request must be encoded in the body as raw JSON in the following format:
-     ```
-      {
-        "event": <String>,
-        "accomodation": <Boolean>,
-      }
-     ```
-   - `event` must be strictly set to `pronite` or `whole_event`
-   - Responds with:
-     - `400` if the request is malformed / invalid
-     - `400` if `accomodation` is set to true but no more accomodation is available
-     - `500` if an internal server error occurs
-     - `200` if the purchase intent was successfully created
-
-   ### /verifyPurchase --> Not Finalised
-   - Request must be encoded in the body as raw JSON in the following format:
-     ```
-      {
-        "razorpay_signature": <String>, 
-        "razorpay_order_id": <String>, 
-        "razorpay_payment_id" : <String>
-      }
-     ```
-   - Responds with:
-     - `400` if the payment could not be verified
-     - `500` if the payment could not be processed
-     - `200` if the payment was confirmed and entry was saved
 
 ## Admin Endpoints
 ### /addIndividual
@@ -422,32 +456,6 @@
      - `500` if an internal server error occurs
      - `200` if the query was successful
 
-## Protected (requireAuth) endpoints 
-### All of the following (except /getUserData, /getCaData amd /generateTicket) are disabled in the current version
-- The following endpoints are protected by the `requireAuth` middleware and require a valid JWT cookie to be present in the user request:
-  - /getUserData
-  - /getCaData
-  - /participateGroup
-  - /participateIndividual
-  - /getParticipants
-  - /generateTicket
-  - /purchase
-  - /verifyPurchase
-- The above endpoints respond with:
-  - `403` if the JWT is invalid / absent
-  - The requested URL if the JWT is present and valid
-
-## Ultra Protected (requireAdmin) endpoints (all of the following are disabled in the current version)
-- The following endpoints are protected by the `requireAdmin` middleware and require a valid admin JWT cookie:
-  - /addGroup
-  - /addIndividual
-  - /getParticipants
-  - /verify
-  - /attended
-- The above endpoints respond with:
-  - `403` if the JWT is invalid / absent or if the token does not correspond to an admin account
-  - The requested URL if the JWT is present and valid
-
 # Document Model Formats
 ### All below documents will also additionally contain the __v and timestamp (createdAt, updatedAt) fields added by Mongoose
 
@@ -468,7 +476,7 @@
     attendedEvent: <Boolean Array of 6 elements>,
     isAdmin: <Boolean>,
     ticketCode: <String>,
-    gender: ,
+    gender: <String (limited by the enum ["Male", "Female", "Non-Binary"])>,
     college: <String>,
     city: <String>,
     dob: <ISO Date>
@@ -533,11 +541,13 @@
 }
 ```
 
-## `CaCode` object
+## `PaymentReceipt` object
 ```
-{
-  "code": <String>,
-  "used": <Boolean>,
-  "createdBy": <String containing admin email>
-}
+  orderId: <String (Razorpay order ID)>,
+  paymentId: <String (Razorpay payment ID)>,
+  receiptId: <String (Internal receipt reference)>,
+  type: < String limited by the enum ["purchase_individual", "purchase_group", "participate_individual", "participate_group"] >,
+  ticketCode: <String (ticket code of user making the payment)>, 
+  data: <Object whose fields determine what will happen after the purchase is verified>,
+  verified: <Boolean>
 ```
