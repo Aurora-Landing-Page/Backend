@@ -565,11 +565,12 @@ const sendForgotPassMail = async (email, name, code) => {
     }
 }
 
-const sendQRMail = async (email, name, image, code) => {
+const sendQRMail = async (email, name, image, code, receiptId) => {
+  const subject = receiptId ? `Aurora 2024: Payment ${receiptId} confirmed` : "Aurora 2024: Ticket";
   var mailOptions = {
     from: process.env.EMAIL,
     to: email,
-    subject: "Aurora 2024: Ticket",
+    subject: subject,
     html: `<!doctype html>
     <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
     

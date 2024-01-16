@@ -9,11 +9,12 @@ const { requireAdmin } = require("../middlewares/requireAuth")
 
 // A small set of admin accounts will be pre-generated and shared with trusted individuals
 // Ultra Protected Routes (available only to the admins)
-// router.post("/addIndividual", requireAdmin, eventController.addIndividual);
-// router.post("/addGroup", requireAdmin, eventController.addGroup);
-// router.get("/getParticipants", requireAdmin, eventController.getParticipants);
-// router.get("/verify", requireAdmin, eventController.verify);
-// router.post("/attended", requireAdmin, eventController.hasAttended);
+router.post("/addIndividual", requireAdmin, eventController.addIndividual);
+router.post("/addGroup", requireAdmin, eventController.addGroup);
+router.get("/getParticipants", requireAdmin, eventController.getParticipants);
+router.get("/verify", requireAdmin, eventController.verify);
+router.post("/attended", requireAdmin, eventController.hasAttended);
+router.get("/getReceipt", requireAdmin, eventController.getReceipt);
 
 // Exporting Router
 module.exports = router;

@@ -95,7 +95,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     const hashedPassword = bcryptjs.hashSync(password, 10);
     
     let ticketCode = generateCode(6);
-    const checkTicketCode = await CA.findOne({ ticketCode }) && await User.findOne({ ticketCode });
+    const checkTicketCode = await User.findOne({ ticketCode });
     while (checkTicketCode) { ticketCode = generateCode(6) }
     
     const newUser = new User({

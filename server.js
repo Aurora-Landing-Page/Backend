@@ -3,6 +3,7 @@ const express = require("express");
 const cookies = require("cookie-parser");
 const app = express();
 const cors = require("cors");
+const path = require("path")
 
 // User Imports
 const connectDb = require("./config/dbConnect");
@@ -51,6 +52,9 @@ app.use((req, res, next) => {
 // Using defined routes for handling various API endpoints
 app.use(userRoutes);
 app.use(adminRoutes);
+
+// Testing payments
+app.use(express.static(path.join(__dirname, 'to-be-implemented')));
 
 // Attach error handling middleware 
 app.use(errorHandler);
