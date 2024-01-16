@@ -455,6 +455,20 @@
      - `500` if an internal server error occurs
      - `200` if the query was successful
 
+### /getReceipt
+   - Request must be encoded in the query:
+     ```
+     {
+       receiptId: <String (internal reference ID)>
+     }
+     ```
+   - The payment receipt is included in the response body as JSON.
+   - Responds with:
+     - `400` if the request is malformed / invalid
+     - `404` if the specified receipt could not be found
+     - `500` if an internal server error occurs
+     - `200` if the query was successful
+
 # Document Model Formats
 ### All below documents will also additionally contain the __v and timestamp (createdAt, updatedAt) fields added by Mongoose
 
