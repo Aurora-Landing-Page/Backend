@@ -75,23 +75,26 @@ const titles = {
 const payments = {
   accomodation:           300,
 
-  day_zero_pronite:       500,    // Before 12 AM, 16 Feb 23 (IST)
-  day_one_pronite:        700,    // Till 12 AM, 17 Feb 23 (IST)
-  day_two_pronite:        400,    // Till 12 AM, 18 Feb 23 (IST)
-  day_three_pronite:      300,    // After 12 AM, 18 Feb 23 (IST)
+  day_zero_pronite:       500,    // Till 11:59 PM, 14 Feb 24 (IST)
+  day_one_pronite:        700,    // Till 10:00 AM, 16 Feb 24 (IST)
+  day_two_pronite:        400,    // Till 10:00 AM, 17 Feb 24 (IST)
+  day_three_pronite:      300,    // Till 10:00 AM, 18 Feb 24 (IST)
+  // Payments close after 10:00 AM, 18 Feb 24
 
-  day_zero_whole_event:   800,    // Before 12 AM, 16 Feb 23 (IST)
-  day_one_whole_event:    1000,   // Till 12 AM, 17 Feb 23 (IST)
-  day_two_whole_event:    700,    // Till 12 AM, 18 Feb 23 (IST)
-  day_three_whole_event:  500     // After 12 AM, 18 Feb 23 (IST)
+  day_zero_whole_event:   800,    // Till 11:59 PM, 14 Feb 24 (IST)
+  day_one_whole_event:    1000,   // Till 10:00 AM, 16 Feb 24 (IST)
+  day_two_whole_event:    700,    // Till 10:00 AM, 17 Feb 24 (IST)
+  day_three_whole_event:  500     // Till 10:00 AM, 18 Feb 24 (IST)
+  // Payments close after 10:00 AM, 18 Feb 24
 }
 
 // All datetimes are handled in UTC
 const timeouts = {
-  base:      "1970-01-01T00:00:00.000Z",     // Epoch start as baseline
-  day_zero:  "2024-02-15T18:30:00.000Z",     // Before 12 AM, 16 Feb 23 (IST)
-  day_one:   "2024-02-16T18:30:00.000Z",     // Till 12 AM, 17 Feb 23 (IST)
-  day_two:   "2024-02-17T18:30:00.000Z",     // Till 12 AM, 18 Feb 23 (IST)
+  base:        "1970-01-01T00:00:00.000Z",     // Epoch start as baseline
+  day_zero:    "2024-02-14T18:29:00.000Z",     // Till 11:59 PM, 14 Feb 24 (IST)
+  day_one:     "2024-02-16T04:30:00.000Z",     // Till 10:00 AM, 16 Feb 24 (IST)
+  day_two:     "2024-02-17T04:30:00.000Z",     // Till 10:00 AM, 17 Feb 24 (IST)
+  day_three:   "2024-02-18T04:30:00.000Z",     // Till 10:00 AM, 18 Feb 24 (IST)
 }
 
 module.exports = { titles, payments, timeouts }

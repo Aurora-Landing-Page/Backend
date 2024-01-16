@@ -5,7 +5,7 @@ const router = express.Router();
 // USer Imports
 const userController = require("../controllers/userController")
 const eventController = require("../controllers/eventController")
-const emailController = require("../controllers/emailController")
+const paymentController = require("../controllers/paymentController")
 
 const { requireAuth, requireAdmin } = require("../middlewares/requireAuth")
 
@@ -22,10 +22,13 @@ router.post("/contactUs", userController.contactUs);
 router.get("/getUserData", requireAuth, userController.getUserData);
 router.get("/getCaData", requireAuth, userController.getCaData);
 router.get("/generateTicket", requireAuth, userController.generateQR);
-// router.post("/participateIndividual", requireAuth, eventController.participateIndividual);
-// router.post("/participateGroup", requireAuth, eventController.participateGroup);
-// router.post("/purchase", requireAuth, eventController.createPurchaseIntent);
-// router.post("/verifyPurchase", requireAuth, eventController.verifyPurchase);
+router.post("/participateIndividual", requireAuth, eventController.participateIndividual);
+router.post("/participateGroup", requireAuth, eventController.participateGroup);
+
+// Payment Routes
+router.get("/getKey", requireAuth, paymentController.sendKey)
+router.post("/createOrder", requireAuth, paymentController.createPurchaseIntent);
+router.post("/verifyOrder", requireAuth, paymentController.verifyPurchase);
 
 // Exporting Router
 module.exports = router;

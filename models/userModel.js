@@ -72,6 +72,12 @@ const userSchema = mongoose.Schema(
       of: groupSchema
     },
     
+    // Stores the receipt IDs as a string array
+    associatedPayments: {
+      type: [String],
+      default: []
+    },
+    
     purchasedTickets: {
       type: [Boolean],
       default: [false, false, false, false, false, false],
