@@ -3,7 +3,7 @@ const express = require("express");
 const cookies = require("cookie-parser");
 const app = express();
 const cors = require("cors");
-const path = require("path")
+const path = require("path");
 
 // User Imports
 const connectDb = require("./config/dbConnect");
@@ -21,7 +21,9 @@ const startServer = async () => {
     try {
       // Start the Express server and listen on the defined port
       app.listen(port, () => {
-        console.log(`\nSuccessfully Connected to Database...\nListening to Requests at Port: ${port}\nServer Started...`);
+        console.log(
+          `\nSuccessfully Connected to Database...\nListening to Requests at Port: ${port}\nServer Started...`
+        );
       });
     } catch (err) {
       console.log(err);
@@ -35,7 +37,12 @@ const startServer = async () => {
 startServer();
 
 // Configuring middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(cookies());
 app.use((req, res, next) => {
@@ -43,9 +50,15 @@ app.use((req, res, next) => {
   console.log("Host : ", req.hostname);
   console.log("Path : ", req.path);
   console.log("Method : ", req.method);
-  if (Object.keys(req.body).length !== 0) { console.log("Body: ", req.body); }
-  if (Object.keys(req.query).length !== 0) { console.log("Query: ", req.query); }
-  if (Object.keys(req.params).length !== 0) { console.log("Params: ", req.params); }
+  if (Object.keys(req.body).length !== 0) {
+    console.log("Body: ", req.body);
+  }
+  if (Object.keys(req.query).length !== 0) {
+    console.log("Query: ", req.query);
+  }
+  if (Object.keys(req.params).length !== 0) {
+    console.log("Params: ", req.params);
+  }
   next();
 });
 
@@ -54,7 +67,7 @@ app.use(userRoutes);
 app.use(adminRoutes);
 
 // Testing payments
-app.use(express.static(path.join(__dirname, 'to-be-implemented')));
+app.use(express.static(path.join(__dirname, "to-be-implemented")));
 
-// Attach error handling middleware 
+// Attach error handling middleware
 app.use(errorHandler);
