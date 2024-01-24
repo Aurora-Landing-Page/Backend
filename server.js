@@ -37,6 +37,7 @@ const startServer = async () => {
 startServer();
 
 // Configuring middleware
+app.use(cookies());
 app.use(
   cors({
     origin: true,
@@ -44,7 +45,6 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(cookies());
 app.use((req, res, next) => {
   console.log("\nNew Request Made :");
   console.log("Host : ", req.hostname);

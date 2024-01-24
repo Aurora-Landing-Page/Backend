@@ -248,7 +248,13 @@ const loginCa = asyncHandler(async (req, res, next) => {
       "Access-Control-Allow-Headers",
       "Origin, X-Requested-With, Content-Type, Accept"
     );
-    res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge });
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      maxAge: maxAge,
+      domain: process.env.DOMAIN,
+      sameSite: "none",
+      secure: true,
+    });
     successHandler(new SuccessResponse(`Logged in`, 202), res, {
       id: user._id,
     });
@@ -263,7 +269,13 @@ const loginUser = asyncHandler(async (req, res, next) => {
   try {
     const user = await User.login(email, password);
     const token = createToken(user._id);
-    res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge });
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      maxAge: maxAge,
+      domain: process.env.DOMAIN,
+      sameSite: "none",
+      secure: true,
+    });
     successHandler(new SuccessResponse(`Logged in`, 202), res, {
       id: user._id,
     });
