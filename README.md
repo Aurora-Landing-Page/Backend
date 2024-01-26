@@ -6,6 +6,7 @@
   NODE_ENV=<development | production>
   TZ=<IANA timezone identifier>
   SITE=<Site link>
+  DOMAIN=<Site domain for setting cookie domain properly>
   RAZORPAY_ID=<Razorpay account ID>
   RAZORPAY_SECRET=<Razorpay account secret>
   EMAIL=<Sender ID>
@@ -61,7 +62,10 @@
   - /getParticipants
   - /getReceipt
   - /verify
+  - /physicalVerify
   - /attended
+  - /getPaymentDetails
+  - /approvePayment
 - The above endpoints respond with:
   - `403` if the JWT is invalid / absent or if the token does not correspond to an admin account
   - The requested URL if the JWT is present and valid
@@ -440,15 +444,83 @@
      - `404` if the specified `ticketCode` could not be found
      - `200` if the query was successful
 
+### /physicalVerify
+   - Request must be encoded in the query as such: `/physicalVerify?ticketCode=<String>`
+   - If the query is valid, the additional fields included in the response body are:
+    ```
+    {
+      __id: <MongoDB ObjectID>
+      name: <String>,
+      email: <String>,
+      phone: <Number>,
+      purchasedTickets: <Boolean Array of 6 elements>,
+      attendedEvent: <Boolean Array of 6 elements>,
+      ticketCode: <String>,
+      onlineRegistrationDone: <Boolean>,
+      freeParticipations: <Number>
+    }
+    ```
+   - Responds with:
+     - `400` if the request is malformed / invalid
+     - `404` if the specified `ticketCode` could not be found
+     - `200` if the query was successful
+
 ### /attended
    - Request must be encoded in the body as raw JSON in the following format:
      ```
      {
          "ticketCode": <String>,
-         "event": <String>
+         "event": <String>,
+         "physicalTicket": <Boolean>
      }
      ```
    - `event` must be strictly set to `pronite` or `whole_event`
+   - `physicalTicket` must be set to `true` if the ticket shown is a physically sold ticket
+   - Responds with:
+     - `400` if the request is malformed / invalid
+     - `404` if the specified ticketCode could not be found
+     - `500` if an internal server error occurs
+     - `200` if the query was successful
+
+### /getPaymentDetails
+   - Request must be encoded in the body as raw JSON in the following format:
+     ```
+     {
+         "ticketCode": <String>,
+     }
+     ```
+   - If the query is valid, the contactUsMessage will be stored in the DB
+   - Responds with:
+     - `400` if the request is malformed / invalid
+     - `404` if the specified eventId could not be found
+     - `500` if an internal server error occurs
+     - `200` if the query was successful
+
+### /approvePayment
+   - Confirms a payment after manual screenshot validation
+   - Request must be encoded in the body as raw JSON in the following format:
+     ```
+     {
+         "ticketCode": <String>
+     }
+     ```
+   - `ticketCode` is the user's ticket code.
+   - Screenshot is included in the response.
+   - Responds with:
+     - `400` if the request is malformed / invalid
+     - `404` if the specified ticketCode could not be found
+     - `500` if an internal server error occurs
+     - `200` if the query was successful
+
+### /denyPayment
+   - Denies a previously confirmed payment
+   - Request must be encoded in the body as raw JSON in the following format:
+     ```
+     {
+         "ticketCode": <String>
+     }
+     ```
+   - `ticketCode` is the user's ticket code.
    - Responds with:
      - `400` if the request is malformed / invalid
      - `404` if the specified ticketCode could not be found
@@ -459,7 +531,7 @@
    - Request must be encoded in the query:
      ```
      {
-       receiptId: <String (internal reference ID)>
+       "receiptId": <String (internal reference ID)>
      }
      ```
    - The payment receipt is included in the response body as JSON.
@@ -498,6 +570,20 @@
 - Expected format of `purchasedTickets`: [pronite_1, pronite_2, pronite_3, whole_event_1, whole_event_2, whole_event_3]
 - Expected format of `attendedEvents`: [pronite_1, pronite_2, pronite_3, whole_event_1, whole_event_2, whole_event_3]
 
+## `PhysicalUser` object
+```
+{
+    __id: <MongoDB ObjectID>
+    name: <String>,
+    email: <String>,
+    phone: <Number>,
+    purchasedTickets: <Boolean Array of 6 elements>,
+    attendedEvent: <Boolean Array of 6 elements>,
+    ticketCode: <String>,
+    onlineRegistrationDone: <Boolean>,
+    freeParticipations: <Number>
+}
+```
 
 ## `CA` object
 ```

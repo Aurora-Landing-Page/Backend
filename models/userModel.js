@@ -97,6 +97,11 @@ const userSchema = mongoose.Schema(
         message: "Invalid length of array"
       }
     },
+
+    freeParticipations: {
+        type: Number,
+        default: 0
+    },
       
     isAdmin: {
       type: Boolean,
