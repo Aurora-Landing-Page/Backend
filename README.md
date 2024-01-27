@@ -46,11 +46,12 @@
   - /getCaData
   - /getParticipants
   - /generateTicket
-  - /purchase
-  - /verifyPurchase
   - /getKey
   - /createOrder
   - /verifyOrder
+- The following are the new payment endpoints:
+  - /purchase
+  - /verifyPurchase
 - The above endpoints respond with:
   - `403` if the JWT is invalid / absent
   - The requested URL if the JWT is present and valid
@@ -61,11 +62,13 @@
   - /addIndividual
   - /getParticipants
   - /getReceipt
+  - /attended
   - /verify
   - /physicalVerify
-  - /attended
+- The following are the new (manual) payment verification endpoints:
   - /getPaymentDetails
   - /approvePayment
+  - /denyPayment
 - The above endpoints respond with:
   - `403` if the JWT is invalid / absent or if the token does not correspond to an admin account
   - The requested URL if the JWT is present and valid

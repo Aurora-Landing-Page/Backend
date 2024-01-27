@@ -36,27 +36,36 @@ function generateCode(length = 8) {
   return referralCode;
 }
 
-async function generateTicket(ticketCode) {
-  let ticketImage = await Jimp.read(
-    "/home/nilanjan-mitra/Desktop/Backend/controllers/ticket.png"
-  );
-  const toEncode = process.env.SITE + "/verify?ticketCode=" + ticketCode;
+async function generateTicket(name, email, phone, ticketCode) {
+  if (name.length > 35) { name = name.slice(0,35) + "..."; }
+  if (email.length > 35) { email = email.slice(0,35) + "..."; }
+
+  let ticketImage = await Jimp.read("/home/nilanjan-mitra/Desktop/Backend/controllers/ticket.png");
+  const toEncode = process.env.SITE + "/physicalVerify?ticketCode=" + ticketCode;
   const opts = {
     errorCorrectionLevel: "H",
     color: {
       dark: "#000",
       light: "#00FF1213",
     },
-    width: 250,
+    width: 300,
   };
   let qrCodeDataUrl = await qrcode.toDataURL(toEncode, opts);
   let base64Image = qrCodeDataUrl.split(";base64,").pop();
   let qrCodeImage = await Jimp.read(Buffer.from(base64Image, "base64"));
 
-  await ticketImage.composite(qrCodeImage, 1605, 195);
+  ticketImage.composite(qrCodeImage, 1625, 173);
 
-  let font = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
-  ticketImage.print(font, 1748, 475, ticketCode);
+  const codeFont = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
+  const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+
+  const fontCanvas = await Jimp.create(300, 300);
+  fontCanvas.print(codeFont, 0, 0, ticketCode).rotate(90);
+  ticketImage.blit(fontCanvas, 65, 65);
+
+  ticketImage.print(font, 995, 383, name);
+  ticketImage.print(font, 995, 449, email);
+  ticketImage.print(font, 995, 514, phone);
   ticketImage.resize(1200, Jimp.AUTO);
 
   return ticketImage;
@@ -212,9 +221,8 @@ const registerCa = asyncHandler(async (req, res, next) => {
 
     try {
       await newCa.save();
-      const { password, __v, createdAt, updatedAt, _id, ...otherFields } =
-        newCa._doc;
-      emailController.sendSignupMail(name, email);
+      const { password, __v, createdAt, updatedAt, _id, ...otherFields } = newCa._doc;
+      emailController.sendSignupMailCa(name, email, referralCode);
       successHandler(
         new SuccessResponse("CA created successfully", 201),
         res,

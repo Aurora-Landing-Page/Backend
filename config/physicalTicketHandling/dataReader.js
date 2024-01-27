@@ -1,18 +1,24 @@
 const fs = require('fs');
 const csv = require('csv-parser');
+const mongoose = require('mongoose');
 const {PhysicalUser} = require('../../models/physicalUserModel');
+
+const dotenv = require("dotenv");
+dotenv.config();
 
 let dataArray = [];
 
-fs.createReadStream('data.csv')
+fs.createReadStream('test.csv')
  .pipe(csv())
  .on('data', (row) => {
-    dataArray.push(row);
+   row['TICKET_CODE'] = Number(row['TICKET_CODE']);
+   dataArray.push(row);
  })
  .on('end', () => {
-    main().catch(console.error("Error occurred\nAborting..."));
+   main();
 });
 
+let connected = false;
 const connectDb = async () => {
    if (connected === false) {
        try {
@@ -28,20 +34,27 @@ const connectDb = async () => {
 };
 
 async function main() {
-   await connectDb();
-   for (let i = 0; i < dataArray.length; i++) {
-      const element = dataArray[i];
-      const newPhysicalUser = new PhysicalUser({
-         name: element.NAME,
-         email: element.EMAIL,
-         phone: element.PHONE,
-         ticketCode: element.TICKET_CODE
-      })
-
-      await newPhysicalUser.save();
-      console.log("Users created: ", i, "/", dataArray.length);
+   try {
+      await connectDb();
+      for (let i = 0; i < dataArray.length; i++) {
+         const element = dataArray[i];
+         console.log(element.TICKET_CODE)
+         const newPhysicalUser = new PhysicalUser({
+            name: element.NAME,
+            email: element.EMAIL,
+            phone: element.PHONE,
+            ticketCode: element.TICKET_CODE
+         })
+   
+         await newPhysicalUser.save();
+         console.log("Users created: ", i + 1, "/", dataArray.length);
+      }
+   
+      console.log("Done");
+      process.exit(0);
+   } catch (error) {
+      console.error(error);
+      console.error("Error Occurred, Aborting...");
+      process.exit(0);
    }
-
-   console.log("Done");
-   process.exit(0);
 }

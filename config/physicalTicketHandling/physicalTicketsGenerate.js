@@ -18,31 +18,42 @@ function generateCode(length = 8) {
  return referralCode;
 }
 
-async function generateTicket(ticketCode) {
- let ticketImage = await Jimp.read("/home/nilanjan-mitra/Desktop/Backend/controllers/ticket.png");
- const toEncode = process.env.SITE + "/physicalVerify?ticketCode=" + ticketCode;
- const opts = {
-    errorCorrectionLevel: "H",
-    color: {
-      dark: "#000",
-      light: "#00FF1213",
-    },
-    width: 250,
- };
- let qrCodeDataUrl = await qrcode.toDataURL(toEncode, opts);
- let base64Image = qrCodeDataUrl.split(";base64,").pop();
- let qrCodeImage = await Jimp.read(Buffer.from(base64Image, "base64"));
+async function generateTicket(name, email, phone, ticketCode) {
+   if (name.length > 35) { name = name.slice(0,35) + "..."; }
+   if (email.length > 35) { email = email.slice(0,35) + "..."; }
 
- await ticketImage.composite(qrCodeImage, 1562, 159);
+   let ticketImage = await Jimp.read("/home/nilanjan-mitra/Desktop/Backend/controllers/ticket.png");
+   const toEncode = process.env.SITE + "/physicalVerify?ticketCode=" + ticketCode;
+   const opts = {
+     errorCorrectionLevel: "H",
+     color: {
+       dark: "#000",
+       light: "#00FF1213",
+     },
+     width: 300,
+   };
+   let qrCodeDataUrl = await qrcode.toDataURL(toEncode, opts);
+   let base64Image = qrCodeDataUrl.split(";base64,").pop();
+   let qrCodeImage = await Jimp.read(Buffer.from(base64Image, "base64"));
 
- let font = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
- ticketImage.print(font, 1708, 438, ticketCode);
- ticketImage.resize(1200, Jimp.AUTO);
+   ticketImage.composite(qrCodeImage, 1625, 173);
 
- return ticketImage;
+   const codeFont = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
+   const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+
+   const fontCanvas = await Jimp.create(300, 300);
+   fontCanvas.print(codeFont, 0, 0, ticketCode).rotate(90);
+   ticketImage.blit(fontCanvas, 65, 65);
+
+   ticketImage.print(font, 995, 383, name);
+   ticketImage.print(font, 995, 449, email);
+   ticketImage.print(font, 995, 514, phone);
+   ticketImage.resize(1200, Jimp.AUTO);
+
+   return ticketImage;
 }
 
-const TICKET_SIZE = 570; // adjust this to change the size of each ticket
+const TICKET_SIZE = 570;
 const X_PADDING = 25;
 const Y_PADDING = 15;
 const TICKET_AMOUNT = 1500;
@@ -50,7 +61,8 @@ const TICKET_AMOUNT = 1500;
 async function main() {
  const ticketCodes = [];
  for (let i = 0; i < TICKET_AMOUNT; i++) {
-    const ticketCode = generateCode(6);
+    let ticketCode = generateCode(6);
+    while(ticketCode in ticketCodes) { ticketCode = generateCode(6); }
     ticketCodes.push(ticketCode);
  }
 
@@ -59,7 +71,11 @@ async function main() {
  for (let i = 0; i < ticketCodes.length; i += 3) {
     for (let j = 0; j < 3; j++) {
       const ticketCode = ticketCodes[i + j];
-      const ticketImage = await generateTicket(ticketCode);
+      let name = "Nilanjan B Mitra";
+      let email = "nilanjanbmitra@gmail.com";
+      let phone = 8899580221;
+
+      const ticketImage = await generateTicket(name, email, phone, ticketCode);
       const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
       const x = X_PADDING;
       const y = Y_PADDING + (j % 3) * 200;
