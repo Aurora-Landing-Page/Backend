@@ -2,55 +2,74 @@
 const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
-const Razorpay = require("razorpay");
-const crypto = require("crypto")
+const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
+const Jimp = require('jimp');
 
 // User Imports
 const { NotFoundError, UserError, ServerError } = require("../utils/errors");
 const SuccessResponse = require("../utils/successResponses");
 const successHandler = require("./successController");
 const { payments, timeouts } = require("../utils/constants");
+const userController = require("./userController");
 const eventController = require("./eventController");
+const emailController = require("./emailController");
 
 // Model Imports
 const { User, Group } = require("../models/userModel");
 const Event = require("../models/event");
-const Receipt = require("../models/paymentReceipt");
 
 // Import environment variables
 const dotenv = require("dotenv");
+const ManualPayment = require("../models/manualPayment");
 dotenv.config();
 
-// Create Razorpay Instance
-const razorpayInstance = new Razorpay({
-  key_id: process.env.RAZORPAY_ID,
-  key_secret: process.env.RAZORPAY_SECRET,
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const createOrder = async (fee, data) => {
+const createOrder = async (fee, data, req) => {
   // Testing pending
   const { type, ticketCode } = data;
   const receiptId = `aurora-${ type }-${ ticketCode }`
 
   try {
-    const orderDetails = await razorpayInstance.orders.create({
-      amount: fee * 100, // In paise
-      currency: "INR",
-      receipt: receiptId // Use the ticketCode of the userDoc as the receipt number
-    });
-
-    const receiptDoc = new Receipt({type, orderId: orderDetails.id, receiptId, ticketCode, data})
+    const receiptDoc = new ManualPayment({receiptId, ticketCode, data, amount: fee, approved: false})
     await receiptDoc.save();
-    return orderDetails;
+    return receiptDoc;
   } catch (error) {
     console.error(`Error creating order: ${error}`);
     throw error;
   }
 };
 
-const sendKey = asyncHandler(async (req, res, next) => {
-    const key = process.env.RAZORPAY_ID;
-    successHandler(new SuccessResponse("Razorpay key retrieval successful"), res, { key })
+const uploadScreenshot = asyncHandler(async(req, res, next) => {
+    const { receiptId } = req.body;
+    try {
+        console.log(req.file);
+        const receiptDoc = await ManualPayment.findOne({ receiptId });
+        if (receiptDoc) {
+            const uploadStream = cloudinary.uploader.upload_stream({ resource_type: "image" }, async (err, result) => {
+                if (err) {
+                    console.error(err);
+                    throw err;
+                }
+    
+                receiptDoc.imageUrl = result.secure_url;
+                await receiptDoc.save();
+                successHandler(new SuccessResponse("File uploaded successfully"), res, { success: true });
+            });
+    
+            await streamifier.createReadStream(req.file.buffer).pipe(uploadStream)
+        } else {
+            next(new NotFoundError("Specified receiptId could not be found"))
+        }
+    } catch (error) {
+        console.error(error);
+        next(new ServerError("File could not be uploaded"));
+    }
 })
 
 const createPurchaseIntent = asyncHandler(async (req, res, next) => {
@@ -58,7 +77,8 @@ const createPurchaseIntent = asyncHandler(async (req, res, next) => {
   // members field is common in participation as well as ticket purchases (in case of group purchases)
   // Fields after members are exclusively for ticket purchasing
 
-  const { eventId, eventType, groupName, members, accomodation, pronite, whole_event, purchaseType } = req.body;
+  const { eventId, eventType, groupName, accomodation, pronite, whole_event, purchaseType } = req.body;
+  var { members } = req.body;
   const token = req.cookies.jwt;
   let number = 1;
   let id;
@@ -77,7 +97,11 @@ const createPurchaseIntent = asyncHandler(async (req, res, next) => {
   
   const userDoc = await User.findById(id);
   const ticketCode = userDoc._doc.ticketCode;
-  members.push({ name: userDoc._doc.name, email: userDoc._doc.email, phone: userDoc._doc.phone });
+  if (members) {
+    members.push({ name: userDoc._doc.name, email: userDoc._doc.email, phone: userDoc._doc.phone });
+  } else {
+    members = [{ name: userDoc._doc.name, email: userDoc._doc.email, phone: userDoc._doc.phone }];
+  }
   number = members.length;
 
   if (purchaseType == "group") {
@@ -142,7 +166,11 @@ const createPurchaseIntent = asyncHandler(async (req, res, next) => {
     const type = number == 1 ? "purchase_individual" : "purchase_group"
     const data = { type, accomodation, ticketCode, purchasedTickets, members }
     try {
-        const order = await createOrder(fee, data);
+        const order = await createOrder(fee, data, req);
+        const receiptId = order.receiptId; 
+        data.members.forEach(async (member) => {
+            await eventController.sendQR(member.name, member.email, member.phone, userDoc._doc.ticketCode, receiptId);
+        });
         successHandler(new SuccessResponse("Purchase Intent Received"), res, order);
     } catch (error) {
         console.error(error)
@@ -161,7 +189,11 @@ const createPurchaseIntent = asyncHandler(async (req, res, next) => {
 
         const data = { type: "participate_group", groupName, ticketCode, members, eventId }
         try {
-            const order = await createOrder(fee, data);
+            const order = await createOrder(fee, data, req);
+            const receiptId = order.receiptId;
+            data.members.forEach(async (member) => {
+                await eventController.sendQR(member.name, member.email, member.phone, userDoc._doc.ticketCode, receiptId);
+            });
             successHandler(new SuccessResponse("Purchase Intent Received"), res, order);
         } catch (error) {
             console.error(error)
@@ -172,7 +204,9 @@ const createPurchaseIntent = asyncHandler(async (req, res, next) => {
 
         const data = { type: "participate_individual", ticketCode, eventId }
         try {
-            const order = await createOrder(fee, data);
+            const order = await createOrder(fee, data, req);
+            const receiptId = order.receiptId;
+            await eventController.sendQR(userDoc._doc.name, userDoc._doc.email, userDoc._doc.phone, userDoc._doc.ticketCode, receiptId);
             successHandler(new SuccessResponse("Purchase Intent Received"), res, order);
         } catch (error) {
             console.error(error)
@@ -183,87 +217,109 @@ const createPurchaseIntent = asyncHandler(async (req, res, next) => {
   }
 );
 
-const verifyPurchase = asyncHandler(async (req, res, next) => {
-  // Testing pending
-  // Additionally uses the Razorpay and crypto libraries
-
-  const { razorpaySignature, razorpayOrderId, razorpayPaymentId } = req.body;
-  const key_secret = process.env.RAZORPAY_SECRET;
-
-  if (!razorpaySignature || !razorpayOrderId || !razorpayPaymentId) {
-    next(new UserError("Malformed request"));
-  } else {
-    // Verify the signature and perform post payment methods
-    
-    const hmac = crypto.createHmac("sha256", key_secret);
-    hmac.update(razorpayOrderId + "|" + razorpayPaymentId);
-    const generatedSignature = hmac.digest("hex");
-
+const approvePurchase = asyncHandler(async (req, res, next) => {
     try {
-      if (razorpaySignature === generatedSignature) {
-        const receiptDoc = await Receipt.findOne({ orderId: razorpayOrderId });
-        const receiptId = receiptDoc._doc.receiptId;
-        receiptDoc.paymentId = razorpayPaymentId;
-
+        const { receiptId } = req.query;
+        const receiptDoc = await ManualPayment.findOne({ receiptId });
+    
         const { data } = receiptDoc._doc;
         const ticketCode = receiptDoc._doc.ticketCode;
         const userDoc = await User.findOne({ ticketCode });
         userDoc.associatedPayments.push(receiptDoc.receiptId);
-        receiptDoc.verified = true;
-
+        receiptDoc.approved = true;
+    
         if (data.type == "purchase_individual") {
             userDoc.purchasedTickets = data.purchasedTickets;
-            await eventController.sendQR(userDoc._doc.name, userDoc._doc.email, userDoc._doc.phone, userDoc._doc.ticketCode, receiptId);
+            const { name, email, phone } = userDoc._doc;
+            const ticketImage = await userController.generateTicket(name, email, phone, ticketCode)
+            const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
+            await emailController.sendConfirmation(name, email, buffer, userDoc._doc.ticketCode, receiptId);
         } else if (data.type == "purchase_group") {
             userDoc.purchasedTickets = data.purchasedTickets;
             userDoc.groupPurchase = data.members;
-
-            await eventController.sendQR(userDoc._doc.name, userDoc._doc.email, userDoc._doc.phone, userDoc._doc.ticketCode, receiptId);
+    
             data.members.forEach(async (member) => {
-                await eventController.sendQR(member.name, member.email, member.phone, userDoc._doc.ticketCode, receiptId);
+                const { name, email, phone } = member;
+                const ticketImage = await userController.generateTicket(name, email, phone, ticketCode)
+                const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
+                await emailController.sendConfirmation(name, email, buffer, userDoc._doc.ticketCode, receiptId);
             });
         } else if (data.type == "participate_individual") {
             const eventDoc = await Event.findById(data.eventId);
             const userObjId = new mongoose.Types.ObjectId(userDoc._doc._id);
-
+    
             eventDoc.participants.push(userObjId);
             userDoc.participatedIndividual.push(eventObjId);
-
-            await eventController.sendQR(userDoc._doc.name, userDoc._doc.email, userDoc._doc.phone, userDoc._doc.ticketCode, receiptId);
+    
+            const { name, email, phone } = userDoc._doc;
+            const ticketImage = await userController.generateTicket(name, email, phone, ticketCode)
+            const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
+            await emailController.sendConfirmation(name, email, buffer, userDoc._doc.ticketCode, receiptId);
             await eventDoc.save();
         } else if (data.type == "participate_group") {
             const eventDoc = await Event.findById(data.eventId);
             const userObjId = new mongoose.Types.ObjectId(userDoc._doc._id);
-
+    
             if (!userDoc.participatedGroup) { userDoc.participatedGroup = new Map(); }
             eventDoc.participants.push(userObjId);
-
+    
             const groupInstance = new Group({ groupName: data.groupName, members: data.members });
             userDoc.participatedGroup.set(data.eventId, groupInstance);
             userDoc.markModified("participatedGroup");
-
-            await eventController.sendQR(userDoc._doc.name, userDoc._doc.email, userDoc._doc.phone, userDoc._doc.ticketCode, receiptId);
+    
             data.members.forEach(async (member) => {
-                await eventController.sendQR(member.name, member.email, member.phone, userDoc._doc.ticketCode, receiptId);
+                const { name, email, phone } = member;
+                const ticketImage = await userController.generateTicket(name, email, phone, ticketCode)
+                const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
+                await emailController.sendConfirmation(name, email, buffer, userDoc._doc.ticketCode, receiptId);
             });
             await eventDoc.save();
         }
-
+    
         await userDoc.save();
         await receiptDoc.save();
-        successHandler(new SuccessResponse("Payment has been verified!"), res, { success: true });
-      } else {
-        next(new UserError("Payment could not be verified"));
-      }
+        successHandler(new SuccessResponse("Payment has been approved!"), res, { success: true });
     } catch (error) {
-        console.error(error)
-        next(new ServerError("Payment could not be processed"));
+        console.error(error);
+        next(new ServerError("Payment could not be approved!"))
     }
-  }
 });
 
+const getReceipt = asyncHandler(async(req, res, next) => {
+    const { receiptId } = req.query
+  
+    if (!receiptId) {
+      next(new UserError("Invalid query"))
+    } else {
+      try {
+        const receiptDoc = await ManualPayment.findOne({ receiptId })
+        const {_id, ...otherFields} = receiptDoc._doc
+        if (receiptDoc) {
+          successHandler(new SuccessResponse("User Found!"), res, otherFields)
+        } else {
+          next(new NotFoundError("Receipt ID could not be found"))
+        }
+      } catch (error) {
+        console.error(error)
+        next(new ServerError("Receipt ID could not be resolved"))
+      }
+    }
+})
+
+const getAllUnapprovedReceipts = asyncHandler(async(req, res, next) => {
+    try {
+        const receipts = await ManualPayment.find({ approved: false });
+        successHandler(new SuccessResponse("Query successful"), res, { unapprovedPayments: receipts });
+    } catch (error) {
+        console.error(error);
+        next(new ServerError("Query could not be ececuted"));
+    }
+})
+
 module.exports = {
-    sendKey,
+    uploadScreenshot,
     createPurchaseIntent,
-    verifyPurchase,
+    approvePurchase,
+    getReceipt,
+    getAllUnapprovedReceipts
 };

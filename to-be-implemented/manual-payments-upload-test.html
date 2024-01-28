@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Upload</title>
+</head>
+<body>
+    <h1>Upload Your Image</h1>
+    <div id="loginForm">
+        <h2>Login</h2>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit" onclick="handleLogin(event)">Login</button>
+    </div>
+    <form id="uploadForm">
+        <input type="text" id="receiptId" placeholder="Enter your receiptId" required>
+        <input type="file" id="imageFile" accept="image/*" required>
+        <button type="submit" onclick="handleUpload(event)">Submit</button>
+    </form>
+
+    <script>
+        async function handleLogin(event) {
+            event.preventDefault();
+            var email = document.getElementById('email').value;
+            var password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                alert('Please enter your email and password.');
+                return;
+            }
+
+            var body = JSON.stringify({ email: email, password: password });
+
+            await fetch('/loginUser', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: body
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+                if (data.id) {
+                    alert('Login successful!');
+                } else {
+                    alert('An error occurred during login.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        };
+        
+        async function handleUpload(event) {
+            event.preventDefault();
+            var receiptId = document.getElementById('receiptId').value;
+            var imageFile = document.getElementById('imageFile').files[0];
+
+            if (!imageFile) {
+                alert('Please select an image file to upload.');
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('image', imageFile);
+            formData.append('receiptId', receiptId);
+
+            await fetch('/uploadScreenshot', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+                if (data.success) {
+                    alert('Your image has been uploaded successfully!');
+                } else {
+                    alert('An error occurred while uploading your image.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        };
+    </script>
+</body>
+</html>

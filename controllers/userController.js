@@ -13,6 +13,7 @@ const emailController = require("./emailController");
 
 // Model Imports
 const { User } = require("../models/userModel");
+const { PhysicalUser } = require("../models/physicalUserModel");
 const CA = require("../models/caModel");
 const Event = require("../models/event");
 const ContactUsMessage = require("../models/contactUsMessage");
@@ -40,8 +41,8 @@ async function generateTicket(name, email, phone, ticketCode) {
   if (name.length > 35) { name = name.slice(0,35) + "..."; }
   if (email.length > 35) { email = email.slice(0,35) + "..."; }
 
-  let ticketImage = await Jimp.read("/home/nilanjan-mitra/Desktop/Backend/controllers/ticket.png");
-  const toEncode = process.env.SITE + "/physicalVerify?ticketCode=" + ticketCode;
+  let ticketImage = await Jimp.read(process.env.TICKET_TEMPLATE_ROUTE);
+  const toEncode = process.env.SITE_FOR_TICKET + "/verify?ticketCode=" + ticketCode;
   const opts = {
     errorCorrectionLevel: "H",
     color: {
@@ -133,7 +134,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     const hashedPassword = bcryptjs.hashSync(password, 10);
 
     let ticketCode = generateCode(6);
-    const checkTicketCode = await User.findOne({ ticketCode });
+    const checkTicketCode = await User.findOne({ ticketCode }) && await PhysicalUser.findOne({ ticketCode });
     while (checkTicketCode) {
       ticketCode = generateCode(6);
     }
@@ -277,13 +278,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
   try {
     const user = await User.login(email, password);
     const token = createToken(user._id);
-    res.cookie("jwt", token, {
-      httpOnly: true,
-      maxAge: maxAge,
-      domain: process.env.DOMAIN,
-      sameSite: "none",
-      secure: true,
-    });
+    res.cookie("jwt", token);
     successHandler(new SuccessResponse(`Logged in`, 202), res, {
       id: user._id,
     });
@@ -433,8 +428,8 @@ const generateQR = asyncHandler(async (req, res, next) => {
     if (!userDoc) {
       next(new UserError("Invalid credentials"));
     } else {
-      const { email, name, ticketCode } = userDoc._doc;
-      const ticketImage = await generateTicket(ticketCode);
+      const { name, email, phone, ticketCode } = userDoc._doc;
+      const ticketImage = await generateTicket(name, email, phone, ticketCode);
       const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
       if (sendToEmail) {
         await emailController.sendQRMail(email, name, buffer, ticketCode);

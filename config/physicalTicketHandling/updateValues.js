@@ -8,10 +8,9 @@ dotenv.config();
 
 let dataArray = [];
 
-fs.createReadStream('test.csv')
+fs.createReadStream('data.csv')
  .pipe(csv())
  .on('data', (row) => {
-   row['TICKET_CODE'] = Number(row['TICKET_CODE']);
    dataArray.push(row);
  })
  .on('end', () => {
@@ -37,17 +36,20 @@ async function main() {
    try {
       await connectDb();
       for (let i = 0; i < dataArray.length; i++) {
-         const element = dataArray[i];
-         console.log(element.TICKET_CODE)
-         const newPhysicalUser = new PhysicalUser({
-            name: element.NAME,
-            email: element.EMAIL,
-            phone: element.PHONE,
-            ticketCode: element.TICKET_CODE
-         })
-   
-         await newPhysicalUser.save();
-         console.log("Users created: ", i + 1, "/", dataArray.length);
+        try {
+            const element = dataArray[i];
+            const physicalUserDoc = await PhysicalUser.findOne({ ticketCode: element.TICKET_CODE });
+            physicalUserDoc.name = element.NAME;
+            physicalUserDoc.email = element.EMAIL;
+            physicalUserDoc.phone = element.PHONE;
+      
+            await physicalUserDoc.save();
+            console.log("Users updated: ", i + 1, "/", dataArray.length);
+        } catch (error) {
+            console.error(error);
+            console.error("Error occurred updating user, skipping...");
+            continue;
+        }
       }
    
       console.log("Done");

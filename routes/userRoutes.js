@@ -1,11 +1,14 @@
 // Library Imports
 const express = require("express");
+const multer = require('multer');
+const upload = multer({ dest: process.env.UPLOADS_DIR });
 const router = express.Router();
 
 // USer Imports
 const userController = require("../controllers/userController")
 const eventController = require("../controllers/eventController")
 const paymentController = require("../controllers/paymentController")
+const newPaymentController = require("../controllers/newPaymentController")
 
 const { requireAuth, requireAdmin } = require("../middlewares/requireAuth")
 
@@ -27,6 +30,10 @@ router.get("/generateTicket", requireAuth, userController.generateQR);
 router.get("/getKey", requireAuth, paymentController.sendKey)
 router.post("/createOrder", requireAuth, paymentController.createPurchaseIntent);
 router.post("/verifyOrder", requireAuth, paymentController.verifyPurchase);
+
+// Manual Payment Routes
+router.post("/uploadScreenshot", requireAuth, upload.single('image'), newPaymentController.uploadScreenshot);
+router.post("/createPurchase", requireAuth, newPaymentController.createPurchaseIntent);
 
 // Exporting Router
 module.exports = router;

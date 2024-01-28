@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test Payment Backend</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+    <!-- Toastify imports-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.6.1/toastify.min.js" integrity="sha512-79j1YQOJuI8mLseq9icSQKT6bLlLtWknKwj1OpJZMdPt2pFBry3vQTt+NZuJw7NSd1pHhZlu0s12Ngqfa371EA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.6.1/toastify.min.css" integrity="sha512-UiKdzM5DL+I+2YFxK+7TDedVyVm7HMp/bN85NeWMJNYortoll+Nd6PU9ZDrZiaOsdarOyk9egQm6LOJZi36L2g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+  <body class="flex items-center justify-center min-h-screen bg-gray-200">
+    <div class="bg-white p-6 rounded shadow-md w-full max-w-md mx-auto">
+      <h2 class="mb-4 text-2xl font-semibold text-gray-700">Purchase Tickets</h2>
+      <form id="paymentForm" class="space-y-4">
+        <fieldset class="border border-gray-300 rounded-md p-4 space-y-4">
+          <legend class="font-medium text-gray-700">Login</legend>
+          <div class="relative">
+            <input type="text" id="email" name="email" placeholder="Enter Email" class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+            <span class="absolute left-2 top-2 text-gray-400">📧</span>
+          </div>
+          <div class="relative">
+            <input type="password" id="password" name="password" placeholder="Enter Password" class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+            <span class="absolute left-2 top-2 text-gray-400">🔑</span>
+          </div>
+          <button type="button" class="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" onclick="login()">Login</button>
+        </fieldset>
+        <fieldset class="border border-gray-300 rounded-md p-4 space-y-4">
+          <legend class="font-medium text-gray-700">Attend</legend>
+          <div class="flex items-center space-x-4">
+            <div class="flex items-center">
+              <input type="radio" id="individualPurchase" name="purchaseType" value="individual" class="mr-2 leading-tight">
+              <label for="individualPurchase">Individual Purchase</label>
+            </div>
+            <div class="flex items-center">
+              <input type="radio" id="groupPurchase" name="purchaseType" value="group" class="mr-2 leading-tight">
+              <label for="groupPurchase">Group Purchase</label>
+            </div>
+           </div>
+          <label class="flex items-center"><input type="checkbox" id="accommodation" name="option" value="Accommodation" class="mr-2 leading-tight"> Accommodation</label>
+          <label class="flex items-center"><input type="radio" id="pronite" name="option" value="pronite" class="mr-2 leading-tight"> Pronite</label>
+          <label class="flex items-center"><input type="radio" id="wholeEvent" name="option" value="Whole Event" class="mr-2 leading-tight"> Whole Event</label>
+          <div id="groupPurchaseFields" class="hidden">
+          </div>
+          <button type="button" class="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" onclick="addGroupPurchaseField()">+ Add Group Member</button>
+        </fieldset>
+        <fieldset class="border border-gray-300 rounded-md p-4 space-y-4">
+          <legend class="font-medium text-gray-700">Participate</legend>
+          <div class="relative">
+            <input type="text" id="eventId" name="eventId" placeholder="Enter Event ID" class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+            <span class="absolute left-2 top-2 text-gray-400">@</span>
+          </div>
+          <div class="relative">
+            <input type="text" id="groupName" name="groupName" placeholder="Enter Group Name" class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+            <span class="absolute left-2 top-2 text-gray-400">👥</span>
+          </div>
+          <div class="flex items-center space-x-4">
+            <div class="flex items-center">
+             <input type="radio" id="individualEvent" name="eventType" value="individual" class="mr-2 leading-tight">
+             <label for="individualEvent">Individual Event</label>
+            </div>
+            <div class="flex items-center">
+             <input type="radio" id="groupEvent" name="eventType" value="group" class="mr-2 leading-tight">
+             <label for="groupEvent">Group Event</label>
+            </div>
+           </div>
+          <div id="groupEventFields" class="hidden">
+          </div>
+          <button type="button" class="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" onclick="addGroupMemberField()">+ Add Group Member</button>
+        </fieldset>
+        <div class="flex space-x-4">
+          <button type="button" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" onclick="initiatePayment()">Pay</button>
+          <button type="button" class="w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" onclick="resetSelections()">Clear</button>
+        </div>
+      </form>
+    </div>
+    <script>
+      let groupMembersCount = 0;
+      let groupPurchaseCount = 0;
+
+      async function login() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        const res = await fetch('/loginUser', {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        })
+
+        if (res.status == 202) {
+          Toastify({
+            text: "Logged In!",
+            duration: 2000
+          }).showToast();
+        } else if (res.status == 400 || res.status == 403) {
+          Toastify({
+            text: "Invalid Credentials",
+            duration: 2000
+          }).showToast();
+        }
+      }
+      
+      async function initiatePayment() {
+      const accommodationChecked = document.getElementById('accommodation').checked;
+      const proniteChecked = document.getElementById('pronite').checked;
+      const wholeEventChecked = document.getElementById('wholeEvent').checked;
+      const purchaseType = document.querySelector('input[name="purchaseType"]:checked')?.value;
+      const eventType = document.querySelector('input[name="eventType"]:checked')?.value;
+      const eventId = document.getElementById('eventId').value;
+      const groupName = document.getElementById('groupName').value;
+      let members;
+      
+      if ((eventType || eventId) && (accommodationChecked || proniteChecked || wholeEventChecked)) {
+        Toastify({
+          text: "You can either purchase tickets or participate at once",
+          duration: 4000
+        }).showToast();
+
+        return;
+      }
+
+      if (eventType === 'group') {
+        members = []
+        for (let i = 0; i < groupMembersCount; i++) {
+          members.push({
+          name: document.getElementById(`memberName${i}`).value,
+          email: document.getElementById(`memberEmail${i}`).value,
+          phone: document.getElementById(`memberPhone${i}`).value,
+          });
+        }
+      }
+
+      if (purchaseType === 'group') {
+        members = []
+        for (let i = 0; i < groupPurchaseCount; i++) {
+          members.push({
+          name: document.getElementById(`groupMemberName${i}`).value,
+          email: document.getElementById(`groupMemberEmail${i}`).value,
+          phone: document.getElementById(`groupMemberPhone${i}`).value,
+          });
+        }
+      }
+
+      let payload
+      if (eventType) {
+        payload = {
+          eventId,
+          eventType,
+          members,
+          groupName
+        };
+      } else {
+        payload = {
+          accomodation: accommodationChecked,
+          pronite: proniteChecked,
+          whole_event: wholeEventChecked,
+          purchaseType,
+          members
+        };
+      }
+
+      const res = await fetch('/createPurchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      console.log(data);
+      }
+      
+      function resetSelections() {
+        document.getElementById('accommodation').checked = false;
+        document.getElementById('pronite').checked = false;
+        document.getElementById('wholeEvent').checked = false;
+        document.getElementById('individualEvent').checked = false;
+        document.getElementById('groupEvent').checked = false;
+        document.getElementById('individualPurchase').checked = false;
+        document.getElementById('groupPurchase').checked = false;
+        document.getElementById('eventId').value = '';
+
+        groupMembersCount = 0;
+        const groupEventDiv = document.getElementById('groupEventFields');
+        groupEventDiv.innerHTML = '';
+        groupEventDiv.classList.add('hidden');
+
+        groupPurchaseCount = 0;
+        const groupPurchaseDiv = document.getElementById('groupPurchaseFields');
+        groupPurchaseDiv.innerHTML = '';
+        groupPurchaseDiv.classList.add('hidden');
+      }
+      
+      function addGroupPurchaseField() {
+        if (groupPurchaseCount == 11) {
+          Toastify({
+            text: "Max of 11 group members allowed",
+            duration: 2000
+          }).showToast();
+
+          return
+        }
+        
+        const groupEventDiv = document.getElementById('groupPurchaseFields');
+        groupEventDiv.classList.remove('hidden');
+
+        const memberDiv = document.createElement('div');
+        memberDiv.className = 'mb-4';
+        memberDiv.innerHTML = `
+        <input type="text" id="groupMemberName${groupPurchaseCount}" name="groupMemberName${groupPurchaseCount}" placeholder="Name" class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+        <input type="email" id="groupMemberEmail${groupPurchaseCount}" name="groupMemberEmail${groupPurchaseCount}" placeholder="Email" class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+        <input type="tel" id="groupMemberPhone${groupPurchaseCount}" name="groupMemberPhone${groupPurchaseCount}" placeholder="Phone" class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+        `;
+        groupEventDiv.appendChild(memberDiv);
+
+        groupPurchaseCount++;
+      }
+
+      function addGroupMemberField() {
+        if (groupMembersCount == 11) {
+          Toastify({
+            text: "Max of 11 group members allowed",
+            duration: 2000
+          }).showToast();
+
+          return
+        }
+        
+        const groupEventDiv = document.getElementById('groupEventFields');
+        groupEventDiv.classList.remove('hidden');
+
+        const memberDiv = document.createElement('div');
+        memberDiv.className = 'mb-4';
+        memberDiv.innerHTML = `
+        <input type="text" id="memberName${groupMembersCount}" name="memberName${groupMembersCount}" placeholder="Name" class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+        <input type="email" id="memberEmail${groupMembersCount}" name="memberEmail${groupMembersCount}" placeholder="Email" class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+        <input type="tel" id="memberPhone${groupMembersCount}" name="memberPhone${groupMembersCount}" placeholder="Phone" class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+        `;
+        groupEventDiv.appendChild(memberDiv);
+
+        groupMembersCount++;
+      }
+    </script>
+  </body>
+</html>

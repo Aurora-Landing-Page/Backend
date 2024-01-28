@@ -99,10 +99,15 @@ const userSchema = mongoose.Schema(
     },
 
     freeParticipations: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0
     },
       
+    isPhysical: {
+      type: Boolean,
+      default: false
+    },
+
     isAdmin: {
       type: Boolean,
       default: false
@@ -111,7 +116,8 @@ const userSchema = mongoose.Schema(
     // 6 character unique ticket code for online verification
     ticketCode: {
       type: String,
-      required: [true, "Please specify the ticket code"]
+      required: [true, "Please specify the ticket code"],
+      unique: [true, "Invalid ticket code"]
     },
 
     // Optional Fields

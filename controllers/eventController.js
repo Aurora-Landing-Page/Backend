@@ -16,6 +16,7 @@ const emailController = require("./emailController")
 
 // Model Imports
 const { User, Group } = require("../models/userModel");
+const { PhysicalUser } = require("../models/physicalUserModel");
 const Receipt = require("../models/paymentReceipt");
 const event = require("../models/event")
 
@@ -29,9 +30,9 @@ const razorpayInstance = new Razorpay({
   key_secret: process.env.RAZORPAY_SECRET
 });
 
-const sendQR = async(email, name, ticketCode, receiptId) => {
+const sendQR = async(name, email, phone, ticketCode, receiptId) => {
   try {
-    const ticketImage = await userController.generateTicket(ticketCode)
+    const ticketImage = await userController.generateTicket(name, email, phone, ticketCode)
     const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
     await emailController.sendQRMail(email, name, buffer, ticketCode, receiptId);
   } catch (error) {
@@ -299,6 +300,26 @@ const verify = asyncHandler(async(req, res, next) => {
   }
 })
 
+const physicalVerify = asyncHandler(async(req, res, next) => {
+  const { ticketCode } = req.query
+
+  if (!ticketCode) {
+    next(new UserError("Invalid query"))
+  } else {
+    try {
+      const userDoc = await PhysicalUser.findOne({ ticketCode })
+      if (userDoc) {
+        const {__v, createdAt, updatedAt, _id, ...otherFields} = userDoc._doc;
+        successHandler(new SuccessResponse("User Found!"), res, otherFields)
+      } else {
+        next(new NotFoundError("User with corresponding ticket code could not be found"))
+      }
+    } catch (error) {
+      next(new ServerError("Ticket could not be verified"))
+    }
+  }
+})
+
 const hasAttended = asyncHandler(async(req, res, next) => {
   const { ticketCode, event } = req.body
   const eventName = event == "pronite" || event == "whole_event"
@@ -352,5 +373,6 @@ module.exports = {
   addIndividual, 
   addGroup, 
   verify,
+  physicalVerify,
   hasAttended
 };

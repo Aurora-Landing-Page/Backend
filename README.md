@@ -5,13 +5,17 @@
   URI=<MongoDB Connection URI>
   NODE_ENV=<development | production>
   TZ=<IANA timezone identifier>
-  SITE=<Site link>
+  SITE_FOR_TICKET=<Admin site link>
   DOMAIN=<Site domain for setting cookie domain properly>
   RAZORPAY_ID=<Razorpay account ID>
   RAZORPAY_SECRET=<Razorpay account secret>
   EMAIL=<Sender ID>
   EMAIL_PASSWORD=<Sender password>
   SMTP_SERVER=<SMTP Auth Server Address>
+  TICKET_TEMPLATE_ROUTE=<Absolute filepath to the ticket template image>
+  CLOUDINARY_CLOUD_NAME=<String>
+  CLOUDINARY_API_KEY=<String>
+  CLOUDINARY_API_SECRET=<String>
   ```
 - npm install
 - npm start
@@ -50,8 +54,8 @@
   - /createOrder
   - /verifyOrder
 - The following are the new payment endpoints:
-  - /purchase
-  - /verifyPurchase
+  - /createPurchase
+  - /uploadScreenshot
 - The above endpoints respond with:
   - `403` if the JWT is invalid / absent
   - The requested URL if the JWT is present and valid
@@ -66,9 +70,9 @@
   - /verify
   - /physicalVerify
 - The following are the new (manual) payment verification endpoints:
-  - /getPaymentDetails
+  - /getReceiptDetails
   - /approvePayment
-  - /denyPayment
+  - /getUnapprovedReceipts
 - The above endpoints respond with:
   - `403` if the JWT is invalid / absent or if the token does not correspond to an admin account
   - The requested URL if the JWT is present and valid
@@ -482,65 +486,6 @@
    - Responds with:
      - `400` if the request is malformed / invalid
      - `404` if the specified ticketCode could not be found
-     - `500` if an internal server error occurs
-     - `200` if the query was successful
-
-### /getPaymentDetails
-   - Request must be encoded in the body as raw JSON in the following format:
-     ```
-     {
-         "ticketCode": <String>,
-     }
-     ```
-   - If the query is valid, the contactUsMessage will be stored in the DB
-   - Responds with:
-     - `400` if the request is malformed / invalid
-     - `404` if the specified eventId could not be found
-     - `500` if an internal server error occurs
-     - `200` if the query was successful
-
-### /approvePayment
-   - Confirms a payment after manual screenshot validation
-   - Request must be encoded in the body as raw JSON in the following format:
-     ```
-     {
-         "ticketCode": <String>
-     }
-     ```
-   - `ticketCode` is the user's ticket code.
-   - Screenshot is included in the response.
-   - Responds with:
-     - `400` if the request is malformed / invalid
-     - `404` if the specified ticketCode could not be found
-     - `500` if an internal server error occurs
-     - `200` if the query was successful
-
-### /denyPayment
-   - Denies a previously confirmed payment
-   - Request must be encoded in the body as raw JSON in the following format:
-     ```
-     {
-         "ticketCode": <String>
-     }
-     ```
-   - `ticketCode` is the user's ticket code.
-   - Responds with:
-     - `400` if the request is malformed / invalid
-     - `404` if the specified ticketCode could not be found
-     - `500` if an internal server error occurs
-     - `200` if the query was successful
-
-### /getReceipt
-   - Request must be encoded in the query:
-     ```
-     {
-       "receiptId": <String (internal reference ID)>
-     }
-     ```
-   - The payment receipt is included in the response body as JSON.
-   - Responds with:
-     - `400` if the request is malformed / invalid
-     - `404` if the specified receipt could not be found
      - `500` if an internal server error occurs
      - `200` if the query was successful
 

@@ -3,25 +3,10 @@ const validator = require("validator");
 
 const userSchema = mongoose.Schema(
   {
-    name: {
-      type: String,
-      maxLength: [30, "Name cannot exceed 30 characters"],
-      minLength: [3, "Name should have more than 2 characters"],
-    },
-
-    email: {
-      type: String,
-      unique: [true, "email address already taken"],
-      validate: {
-        validator: validator.isEmail,
-        message: "Please enter a valid Email",
-      },
-    },
-    
-    phone: {
-      type: Number,
-      unique: [true, "phone number already taken"],
-    },
+    // Not performing validation here to allow null values
+    name: String,
+    email:  String,
+    phone: Number,
     
     purchasedTickets: {
       type: [Boolean],
@@ -46,7 +31,8 @@ const userSchema = mongoose.Schema(
     // 6 character unique ticket code for online verification
     ticketCode: {
       type: String,
-      required: [true, "Please specify the ticket code"]
+      required: [true, "Please specify the ticket code"],
+      unique: [true, "Invalid ticket code"]
     },
 
     onlineRegistrationDone: {

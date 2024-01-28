@@ -25,7 +25,7 @@ const admins = [
         name: "John Doe",
         password: "password",
         email: "john@gmail.com",
-        phone: 9999999999,
+        phone: 8787377237,
         isAdmin: true
     }
 ]

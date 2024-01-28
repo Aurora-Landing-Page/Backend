@@ -42,4 +42,5 @@ const receiptSchema = mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("payment_receipt", receiptSchema);
+const Receipt = mongoose.model("payment_receipt", receiptSchema);
+module.exports = Receipt;

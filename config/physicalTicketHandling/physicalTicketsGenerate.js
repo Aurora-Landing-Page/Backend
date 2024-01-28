@@ -22,8 +22,8 @@ async function generateTicket(name, email, phone, ticketCode) {
    if (name.length > 35) { name = name.slice(0,35) + "..."; }
    if (email.length > 35) { email = email.slice(0,35) + "..."; }
 
-   let ticketImage = await Jimp.read("/home/nilanjan-mitra/Desktop/Backend/controllers/ticket.png");
-   const toEncode = process.env.SITE + "/physicalVerify?ticketCode=" + ticketCode;
+   let ticketImage = await Jimp.read(process.env.TICKET_TEMPLATE_ROUTE);
+   const toEncode = process.env.SITE_FOR_TICKET + "/physicalVerify?ticketCode=" + ticketCode;
    const opts = {
      errorCorrectionLevel: "H",
      color: {
