@@ -166,7 +166,7 @@ const createPurchaseIntent = asyncHandler(async (req, res, next) => {
     for (let range of paymentRanges[event]) {
         if (dt >= range.range[0] && dt < range.range[1]) {
             fee = payable * payments[range.feeKey];
-            fee += accomodation == true ? payments.accomodation : 0;
+            fee += accomodation == true ? payments.accomodation * payable : 0;
             purchasedTickets = range.tickets;
             break;
         }
