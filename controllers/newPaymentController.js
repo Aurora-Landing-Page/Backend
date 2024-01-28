@@ -230,7 +230,12 @@ const approvePurchase = asyncHandler(async (req, res, next) => {
     try {
         const { receiptId } = req.query;
         const receiptDoc = await ManualPayment.findOne({ receiptId });
-    
+        
+        if (!receiptDoc) {
+          next(new NotFoundError("Specified receiptId could not be found"));
+          return;
+        }
+
         const { data } = receiptDoc._doc;
         const ticketCode = receiptDoc._doc.ticketCode;
         const userDoc = await User.findOne({ ticketCode });
