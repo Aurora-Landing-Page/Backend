@@ -771,8 +771,8 @@ const sendForgotPassMail = async (email, name, code) => {
     }
 }
 
-const sendQRMail = async (email, name, image, code, receiptId) => {
-  const subject = receiptId ? `Aurora 2024: Payment ${receiptId} confirmed` : "Aurora 2024: Ticket";
+const sendQRMail = async (name, email, image, code, receiptId) => {
+  const subject = receiptId ? `Payment Intent Received: ${ receiptId }`: "Aurora Ticket";
   var mailOptions = {
     from: process.env.EMAIL,
     to: email,

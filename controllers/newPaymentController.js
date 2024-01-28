@@ -140,7 +140,7 @@ const createPurchaseIntent = asyncHandler(async (req, res, next) => {
   // Handle ticket purchases
   if (accomodation || pronite || whole_event) {
     // payable is later used to compute fee
-    let payable;
+    let payable = number;
     if (number == 1) { payable = 1 }
     if (number == 5) { payable = 4 }
     if (number == 11) { payable = 8 }
@@ -182,7 +182,7 @@ const createPurchaseIntent = asyncHandler(async (req, res, next) => {
         data.members.forEach(async (member) => {
             await eventController.sendQR(member.name, member.email, member.phone, userDoc._doc.ticketCode, receiptId);
         });
-        successHandler(new SuccessResponse("Purchase Intent Received"), res, order);
+        successHandler(new SuccessResponse("Purchase Intent Received"), res, order._doc);
     } catch (error) {
         console.error(error)
         next(new ServerError("Purchase intent could not be created"));
@@ -205,7 +205,7 @@ const createPurchaseIntent = asyncHandler(async (req, res, next) => {
             data.members.forEach(async (member) => {
                 await eventController.sendQR(member.name, member.email, member.phone, userDoc._doc.ticketCode, receiptId);
             });
-            successHandler(new SuccessResponse("Purchase Intent Received"), res, order);
+            successHandler(new SuccessResponse("Purchase Intent Received"), res, order._doc);
         } catch (error) {
             console.error(error)
             next(new ServerError("Purchase intent could not be created"));
@@ -218,7 +218,7 @@ const createPurchaseIntent = asyncHandler(async (req, res, next) => {
             const order = await createOrder(fee, data, req);
             const receiptId = order.receiptId;
             await eventController.sendQR(userDoc._doc.name, userDoc._doc.email, userDoc._doc.phone, userDoc._doc.ticketCode, receiptId);
-            successHandler(new SuccessResponse("Purchase Intent Received"), res, order);
+            successHandler(new SuccessResponse("Purchase Intent Received"), res, order._doc);
         } catch (error) {
             console.error(error)
             next(new ServerError("Purchase intent could not be created"));

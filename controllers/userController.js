@@ -438,7 +438,7 @@ const generateQR = asyncHandler(async (req, res, next) => {
       const ticketImage = await generateTicket(name, email, phone, ticketCode);
       const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
       if (sendToEmail) {
-        await emailController.sendQRMail(email, name, buffer, ticketCode);
+        await emailController.sendQRMail(name, email, buffer, ticketCode);
       }
 
       res.setHeader("Content-Type", "image/png");

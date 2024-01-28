@@ -34,7 +34,7 @@ const sendQR = async(name, email, phone, ticketCode, receiptId) => {
   try {
     const ticketImage = await userController.generateTicket(name, email, phone, ticketCode)
     const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
-    await emailController.sendQRMail(email, name, buffer, ticketCode, receiptId);
+    await emailController.sendQRMail(name, email, buffer, ticketCode, receiptId);
   } catch (error) {
     console.error(error)
     throw new Error(error)
