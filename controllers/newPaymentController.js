@@ -188,8 +188,9 @@ const createPurchaseIntent = asyncHandler(async (req, res, next) => {
   } 
   // Handle event participations
   else if (eventId) {
+    let payable = number;
     const eventDoc = await Event.findById(eventId);
-    const fee = eventDoc._doc.fee;
+    const fee = payable * eventDoc._doc.fee;
 
     if (!eventDoc) { next(new NotFoundError("Invalid event ID")); return; }
 

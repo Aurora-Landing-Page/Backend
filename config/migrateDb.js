@@ -2,15 +2,12 @@
 const mongoose = require("mongoose");
 
 // Model Imports
-const event = require("../models/event")
+const User = require("../models/userModel");
+const CA = require("../models/caModel");
 
 // Import environment variables
 const dotenv = require("dotenv");
 dotenv.config();
-
-const individualList = []
-
-const grouplList = []
 
 let connected = false
 
@@ -30,26 +27,25 @@ const connectDb = async () => {
 
 const populate = async () => {
     if (await connectDb()) {
-        individualList.forEach(async (element) => {
-            const newEvent = new event({
-                name: element.name,
-                fee: element.fee
-            })
+        var userMap = {};
+        var caMap = {};
 
-            await newEvent.save();
-            console.log(newEvent);
+        const users = await User.find({}, (err, users) => {
+            users.forEach((user) => {
+            userMap[user._id] = user;
+        });
         })
 
-        grouplList.forEach(async (element) => {
-            const newEvent = new event({
-                name: element.name,
-                fee: element.fee,
-                isGroup: true
-            })
+        const cas = await CA.find({}, (err, cas) => {
+            cas.forEach((ca) => {
+            caMap[ca._id] = ca;
+        });
 
-            await newEvent.save();
-            console.log(newEvent);
-        })
+        console.log(userMap);
+        console.log(caMap);
+        console.log(users);
+        console.log(cas);
+    })
     } else { process.exit(1) }
 }
 
