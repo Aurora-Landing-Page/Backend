@@ -48,24 +48,28 @@ const createOrder = async (fee, data, req) => {
 const uploadScreenshot = asyncHandler(async(req, res, next) => {
     const { receiptId } = req.body;
     try {
-        console.log(req.file);
-        const receiptDoc = await ManualPayment.findOne({ receiptId });
-        if (receiptDoc) {
-            const uploadStream = cloudinary.uploader.upload_stream({ resource_type: "image" }, async (err, result) => {
-                if (err) {
-                    console.error(err);
-                    throw err;
-                }
-    
-                receiptDoc.imageUrl = result.secure_url;
-                await receiptDoc.save();
-                successHandler(new SuccessResponse("File uploaded successfully"), res, { success: true });
-            });
-    
-            await streamifier.createReadStream(req.file.buffer).pipe(uploadStream)
-        } else {
-            next(new NotFoundError("Specified receiptId could not be found"))
-        }
+      if (req.file.size > (1024 * 1024) + 1000) {
+        next(new UserError("File size too large", 413));
+        return;
+      }
+      
+      const receiptDoc = await ManualPayment.findOne({ receiptId });
+      if (receiptDoc) {
+          const uploadStream = cloudinary.uploader.upload_stream({ resource_type: "image" }, async (err, result) => {
+              if (err) {
+                  console.error(err);
+                  throw err;
+              }
+  
+              receiptDoc.imageUrl = result.secure_url;
+              await receiptDoc.save();
+              successHandler(new SuccessResponse("File uploaded successfully"), res, { success: true });
+          });
+  
+          await streamifier.createReadStream(req.file.buffer).pipe(uploadStream)
+      } else {
+          next(new NotFoundError("Specified receiptId could not be found"))
+      }
     } catch (error) {
         console.error(error);
         next(new ServerError("File could not be uploaded"));
