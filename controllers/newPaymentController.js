@@ -33,7 +33,14 @@ cloudinary.config({
 const createOrder = async (fee, data, req) => {
   // Testing pending
   const { type, ticketCode } = data;
-  const receiptId = `aurora-${ type }-${ ticketCode }`
+  let code = userController.generateCode(8);
+  let receiptId = `aurora-${ type }-${ code }`;
+  const checkReceiptId = await ManualPayment.findOne({ receiptId });
+
+  while (checkReceiptId) { 
+    code = userController.generateCode(8);
+    receiptId = `aurora-${ type }-${ code }`;
+  }
 
   try {
     const receiptDoc = new ManualPayment({receiptId, ticketCode, data, amount: fee, approved: false})
