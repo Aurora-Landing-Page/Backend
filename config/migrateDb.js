@@ -9,14 +9,17 @@ const CA = require("../models/caModel");
 const dotenv = require("dotenv");
 dotenv.config();
 
-let connected = false
+const db1 = "mongodb+srv://nilanjanbmitra:B62egXux68gfApJK@aurora-ca-login.jvgfddw.mongodb.net/?retryWrites=true&w=majority";
+const db2 = "mongodb+srv://Mrigank:mrigank123@cluster0.5qadx4w.mongodb.net/?retryWrites=true&w=majority";
+let connected1 = false;
+let connected2 = false;
 
-const connectDb = async () => {
-    if (connected === false) {
+const connectDb1 = async () => {
+    if (connected1 === false) {
         try {
-            const connect = await mongoose.connect(process.env.URI);
-            console.log("\nMongoDb Connected: ", connect.connection.name);
-            connected = true
+            const connection1 = await mongoose.connect(db1);
+            console.log("\nMongoDb Connected: ", connection1.connection.name);
+            connected1 = true
             return true;
         } catch (err) {
             console.log(err);
@@ -25,28 +28,49 @@ const connectDb = async () => {
     } else { return true }
 };
 
-const populate = async () => {
-    if (await connectDb()) {
-        var userMap = {};
-        var caMap = {};
+const connectDb2 = async () => {
+    if (connected2 === false) {
+        try {
+            const connection2 = await mongoose.connect(db2);
+            console.log("\nMongoDb Connected: ", connection2.connection.name);
+            connected2 = true
+            return true;
+        } catch (err) {
+            console.log(err);
+            process.exit(1);
+        }
+    } else { return true }
+};
 
-        const users = await User.find({}, (err, users) => {
-            users.forEach((user) => {
-            userMap[user._id] = user;
-        });
-        })
 
-        const cas = await CA.find({}, (err, cas) => {
-            cas.forEach((ca) => {
-            caMap[ca._id] = ca;
-        });
-
-        console.log(userMap);
-        console.log(caMap);
+async function main() {
+    await connectDb1();
+    await connectDb2();
+    
+    await User.find({}, function(err, users) {
+        if (err) {
+           console.error('Failed to retrieve users', err);
+           return;
+        }
+        
         console.log(users);
-        console.log(cas);
-    })
-    } else { process.exit(1) }
+        // const destinationUsers = mongoose.model('DestinationUser', userSchema, 'users');
+        // destinationUsers.insertMany(users, function(err, result) {
+        //    if (err) {
+        //      console.error('Failed to insert users', err);
+        //      return;
+        //    }
+        //    console.log('Inserted users into Destination Database');
+        // });
+    });
 }
 
-populate();
+main()
+.catch((err) => {
+    console.error(err);
+    process.exit(1);
+})
+.then(() => {
+    console.log("Done");
+    process.exit(0);
+});
