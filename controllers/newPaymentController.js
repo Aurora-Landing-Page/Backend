@@ -118,8 +118,6 @@ const createPurchaseIntent = asyncHandler(async (req, res, next) => {
   if (purchaseType == "group") {
     // Possible purchase sizes are 1, 5 (4 + 1) and 11 (8 + 3)
     number = members.length;
-    const sizeOfGroup = number == 1 || number == 5 || number == 11;
-    if (!sizeOfGroup) { next(new UserError("Malformed request")); return; }
 
     if (number > 1 && !members) {
       next(new UserError("Members not specified"));
