@@ -261,6 +261,7 @@ const approvePurchase = asyncHandler(async (req, res, next) => {
             });
         } else if (data.type == "participate_individual") {
             const eventDoc = await Event.findById(data.eventId);
+            const eventObjId = new mongoose.Types.ObjectId(eventDoc._doc._id);
             const userObjId = new mongoose.Types.ObjectId(userDoc._doc._id);
     
             eventDoc.participants.push(userObjId);
@@ -273,6 +274,7 @@ const approvePurchase = asyncHandler(async (req, res, next) => {
             await eventDoc.save();
         } else if (data.type == "participate_group") {
             const eventDoc = await Event.findById(data.eventId);
+            const eventObjId = new mongoose.Types.ObjectId(eventDoc._doc._id);
             const userObjId = new mongoose.Types.ObjectId(userDoc._doc._id);
     
             if (!userDoc.participatedGroup) { userDoc.participatedGroup = new Map(); }
