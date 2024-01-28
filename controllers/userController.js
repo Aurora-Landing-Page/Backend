@@ -38,8 +38,8 @@ function generateCode(length = 8) {
 }
 
 async function generateTicket(name, email, phone, ticketCode) {
-  if (name.length > 35) { name = name.slice(0,35) + "..."; }
-  if (email.length > 35) { email = email.slice(0,35) + "..."; }
+  if (name.length > 28) { name = name.slice(0,35) + "..."; }
+  if (email.length > 28) { email = email.slice(0,35) + "..."; }
 
   let ticketImage = await Jimp.read(process.env.TICKET_TEMPLATE_ROUTE);
   const toEncode = process.env.SITE_FOR_TICKET + "/verify?ticketCode=" + ticketCode;

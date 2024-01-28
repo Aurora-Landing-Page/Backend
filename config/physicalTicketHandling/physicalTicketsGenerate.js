@@ -19,8 +19,8 @@ function generateCode(length = 8) {
 }
 
 async function generateTicket(name, email, phone, ticketCode) {
-   if (name.length > 35) { name = name.slice(0,35) + "..."; }
-   if (email.length > 35) { email = email.slice(0,35) + "..."; }
+   if (name.length > 28) { name = name.slice(0,28) + "..."; }
+   if (email.length > 28) { email = email.slice(0,28) + "..."; }
 
    let ticketImage = await Jimp.read(process.env.TICKET_TEMPLATE_ROUTE);
    const toEncode = process.env.SITE_FOR_TICKET + "/physicalVerify?ticketCode=" + ticketCode;
@@ -56,7 +56,7 @@ async function generateTicket(name, email, phone, ticketCode) {
 const TICKET_SIZE = 570;
 const X_PADDING = 25;
 const Y_PADDING = 15;
-const TICKET_AMOUNT = 1500;
+const TICKET_AMOUNT = 3;
 
 async function main() {
  const ticketCodes = [];
@@ -71,8 +71,8 @@ async function main() {
  for (let i = 0; i < ticketCodes.length; i += 3) {
     for (let j = 0; j < 3; j++) {
       const ticketCode = ticketCodes[i + j];
-      let name = "Nilanjan B Mitra";
-      let email = "nilanjanbmitra@gmail.com";
+      let name = "Nilanjan B Mitracdnsocndsjncskjdc";
+      let email = "nilanjanbmitra@gmail.comcskdncdsncjkn";
       let phone = 8899580221;
 
       const ticketImage = await generateTicket(name, email, phone, ticketCode);
