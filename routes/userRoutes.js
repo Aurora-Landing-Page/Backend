@@ -18,6 +18,7 @@ router.post("/loginCa", userController.loginCa);
 router.post("/logout", userController.logout);
 router.post("/forgotPassword", userController.forgotPass);
 router.post("/contactUs", userController.contactUs);
+router.post("/getPaymentStatus", userController.getUserPaymentStatus);
 
 // Protected Routes (available to registered users / admins / CAs)
 router.get("/getUserData", requireAuth, userController.getUserData);

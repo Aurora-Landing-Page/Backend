@@ -330,6 +330,26 @@ const getUserData = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getUserPaymentStatus = asyncHandler(async (req, res, next) => {
+
+  try {
+    const email = req.body.email;
+
+    const userDoc = await User.findOne({email});
+    if (userDoc) {
+      const { associatedPayments } =
+        userDoc._doc;
+        let paid = associatedPayments;
+      successHandler(new SuccessResponse("User Found"), res, paid);
+    } else {
+      next(new NotFoundError("User not found"));
+    }
+  } catch (error) {
+    console.error(error);
+    next(new ServerError("Unknown error"));
+  }
+});
+
 const getCaData = asyncHandler(async (req, res, next) => {
   const token = req.cookies.jwt;
   let id;
@@ -467,4 +487,5 @@ module.exports = {
   generateQR,
   generateCode,
   generateTicket,
+  getUserPaymentStatus
 };
