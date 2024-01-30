@@ -3,13 +3,12 @@ const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const Jimp = require("jimp");
-const Razorpay = require("razorpay")
 
 // User Imports
 const {NotFoundError, UserError, ServerError} = require("../utils/errors")
 const SuccessResponse = require("../utils/successResponses")
 const successHandler = require("./successController")
-const { payments, timeouts } = require("../utils/constants")
+const { timeouts } = require("../utils/constants")
 const { AdminAddedUser } = require("../models/adminAdded")
 const userController = require("./userController")
 const emailController = require("./emailController")
@@ -23,12 +22,6 @@ const event = require("../models/event")
 // Import environment variables
 const dotenv = require("dotenv");
 dotenv.config();
-
-// Create Razorpay Instance
-const razorpayInstance = new Razorpay({
-  key_id: process.env.RAZORPAY_ID,
-  key_secret: process.env.RAZORPAY_SECRET
-});
 
 const sendQR = async(name, email, phone, ticketCode, receiptId) => {
   try {

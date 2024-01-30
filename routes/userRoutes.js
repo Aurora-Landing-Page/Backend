@@ -6,11 +6,9 @@ const router = express.Router();
 
 // USer Imports
 const userController = require("../controllers/userController")
-const eventController = require("../controllers/eventController")
-const paymentController = require("../controllers/paymentController")
 const newPaymentController = require("../controllers/newPaymentController")
 
-const { requireAuth, requireAdmin } = require("../middlewares/requireAuth")
+const { requireAuth } = require("../middlewares/requireAuth")
 
 // Routes open to the public
 router.post("/registerUser",userController.registerUser);
@@ -26,10 +24,11 @@ router.get("/getUserData", requireAuth, userController.getUserData);
 router.get("/getCaData", requireAuth, userController.getCaData);
 router.get("/generateTicket", requireAuth, userController.generateQR);
 
-// Payment Routes
-router.get("/getKey", requireAuth, paymentController.sendKey)
-router.post("/createOrder", requireAuth, paymentController.createPurchaseIntent);
-router.post("/verifyOrder", requireAuth, paymentController.verifyPurchase);
+// DEPRECATED
+// RazorPay Payment Routes
+// router.get("/getKey", requireAuth, paymentController.sendKey)
+// router.post("/createOrder", requireAuth, paymentController.createPurchaseIntent);
+// router.post("/verifyOrder", requireAuth, paymentController.verifyPurchase);
 
 // Manual Payment Routes
 router.post("/uploadScreenshot", requireAuth, upload.single('image'), newPaymentController.uploadScreenshot);

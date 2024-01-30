@@ -11,8 +11,6 @@
   TZ=<IANA timezone identifier>
   SITE_FOR_TICKET=<Admin site link>
   DOMAIN=<Site domain for setting cookie domain properly>
-  RAZORPAY_ID=<Razorpay account ID>
-  RAZORPAY_SECRET=<Razorpay account secret>
   EMAIL=<Sender ID>
   EMAIL_PASSWORD=<Sender password>
   SMTP_SERVER=<SMTP Auth Server Address>
@@ -50,40 +48,39 @@
 
 ## Protected (requireAuth) endpoints
 - The following endpoints are protected by the `requireAuth` middleware and require a valid JWT cookie to be present in the user request:
-  - /getUserData
-  - /getCaData
-  - /getParticipants
-  - /generateTicket
-  - /getKey
-  - /createOrder
-  - /verifyOrder
+  - /getUserData : `GET`
+  - /getCaData : `GET`
+  - /generateTicket : `GET`
+  - DEPRECATED :: /getKey : `GET`
+  - DEPRECATED :: /createOrder : `POST`
+  - DEPRECATED :: /verifyOrder : `POST`
 - The following are the new payment endpoints:
-  - /createPurchase
-  - /uploadScreenshot
+  - /createPurchase : `POST`
+  - /uploadScreenshot : `POST`
 - The above endpoints respond with:
   - `403` if the JWT is invalid / absent
   - The requested URL if the JWT is present and valid
 
 ## Ultra Protected (requireAdmin) endpoints
 - The following endpoints are protected by the `requireAdmin` middleware and require a valid admin JWT cookie:
-  - /addGroup
-  - /addIndividual
-  - /getParticipants
-  - /getReceipt
-  - /attended
-  - /verify
-  - /physicalVerify
+  - /addGroup : `POST`
+  - /addIndividual : `POST`
+  - /getParticipants : `GET`
+  - /getReceipt : `GET`
+  - /attended : `POST`
+  - /verify : `GET`
+  - /physicalVerify : `GET`
 - The following are the new (manual) payment verification endpoints:
-  - /getReceiptDetails
-  - /approvePayment
-  - /getUnapprovedReceipts
+  - /getReceiptDetails : `GET`
+  - /approvePayment : `POST`
+  - /getUnapprovedReceipts : `GET` 
 - The above endpoints respond with:
   - `403` if the JWT is invalid / absent or if the token does not correspond to an admin account
   - The requested URL if the JWT is present and valid
 
 # API Endpoints
 ## User Endpoints
-   ### /registerUser
+   ### /registerUser : POST
    - For registering new users.
    - Request must be encoded in the body as raw JSON in the following format:
      ```
@@ -128,7 +125,7 @@
      - `500` if the user could not be created due to a server error
      - `201` with the user object in response JSON
 
-   ### /getUserData
+   ### /getUserData : GET
    - If the cookie `jwt` is set and valid (corresponding ObjectID exists in the Users collection), the following additional fields are included in the response:
      ```
      {
@@ -158,7 +155,7 @@
      - `200` if the specified User was found
 
   ## A working demo of payments is present in the to-be-implemented directory
-   ### /getKey
+   ### /getKey : GET :: DEPRECATED
    - Returns the Razorpay key (to the account which will receive payments).
    - The following additional fields are included in the response
      ```
@@ -170,7 +167,7 @@
      - `403` if the JWT is invalid / absent
      - `200` if the key was returned successfully
 
-   ### /createOrder
+   ### /createOrder : POST :: DEPRECATED
    - The following fields must be added to the request body as JSON:
      ```
      { 
@@ -206,7 +203,7 @@
      - `500` if an internal server error occurs
      - `200` if the order was successfully created
 
-   ### /verifyOrder
+   ### /verifyOrder : POST :: DEPRECATED
    - The following fields must be added to the request body as JSON:
      ```
      {
@@ -221,8 +218,62 @@
      - `500` if an internal server error occurs and payment could not be processed
      - `200` if the payment was successful, verified and confirmed
 
+   ### /createPurchase : POST
+   - For ticket purchase, the following must be encoded in the body as JSON:
+     ```
+     { 
+        accomodation: <Boolean>, 
+        pronite: <Boolean>, 
+        whole_event: <Boolean>, 
+        purchaseType: <String (individual || group)>,
+        members: <Array of MinUser (not including the user themselves)>
+     }
+     ```
+   - For event participation, the following must be encoded in the body as JSON:
+     ```
+     { 
+        eventId: <String>, 
+        eventType: <String (individual || group)>, 
+        groupName: <String>, 
+        members: <Array of MinUser (not including the user themselves)>
+     }
+     ```
+   - If the purchase was successfully created, the following additional fields are included in the response body:
+    ```
+    {
+        receiptId: <String>,
+        ticketCode: <String>,
+        amount: <Number>,
+        imageUrl: <Cloudinary image URL>,
+        data: <Object representing post payment operations>,
+        approved: <Boolean>
+    }
+    ```
+   - `imageUrl` will be empty here as image has not yet been uploaded
+   - Responds with:
+     - `400` if the request is malformed
+     - `403` if the JWT is absent / invalid
+     - `404` if the intent is participation but specified eventId could not be found
+     - `500` is an internal sever error occurs and purchase intent could not be created
+     - `200` if the purchase was successfully created
+
+   ### /uploadScreenshot : POST
+   - The image must be added to FormData along with the receiptId. The FormData should be of the format:
+     ```
+     {
+        image: <ImageFile>, 
+        receiptId: <String>
+     }
+     ```
+   - If the upload was successful, an additional `success: true` field is included in the response body
+   - Responds with:
+     - `413` if the file size is too large (limited to 1.1MB)
+     - `404` if the specified receiptId could not be found
+     - `500` if an internal server error occurs
+     - `200` if the upload was successful 
+
 ## CA Endpoints
-   ### /registerCa
+   ### /registerCA : POST
    - For creating new Campus Ambassador accounts
    - Request must be encoded in the body as raw JSON in the following format:
      ```
@@ -267,7 +318,7 @@
      - `500` if the user could not be created due to a server error
      - `201` if the user was created successfully
 
-   ### /getCaData
+   ### /getCaData : GET
    - If the cookie `jwt` is set and valid (corresponding ObjectID exists in the CAs collection), a response of the following format is sent:
      ```
      {
@@ -308,7 +359,7 @@
      - `200` if the specified CA was found
 
 ## Common Endpoints
-   ### /loginCa and /loginUser
+   ### /loginCa and /loginUser : POST
    - JWT based authentication is used
    - Request must be encoded in the body as raw JSON in the following format:
      ```
@@ -324,11 +375,11 @@
      - `403` if the specified user/CA is not found in the DB
      - `202` if the user is logged in successfully
 
-   ### /logout
+   ### /logout : POST
    - The cookie `jwt` is deleted and thus the user is logged out
    - Responds with a `200`
 
-   ### /forgotPass 
+   ### /forgotPass : POST
    - Request must be encoded in the body as raw JSON in the following format:
      ```
      {
@@ -345,7 +396,7 @@
      - `500` if an internal server error occurs
      - `200` if the password was reset and a mail was successfully sent to the user
 
-   ### /contactUs
+   ### /contactUs : POST
    - Request must be encoded in the body as raw JSON in the following format:
      ```
      {
@@ -361,7 +412,7 @@
      - `500` if an internal server error occurs
      - `200` if the message was successfully saved in the DB
 
-   ### /generateTicket
+   ### /generateTicket : GET
    - No additional data required to be encoded in the request, user must be logged in
    - The following may be set in the request body if an email should also be sent with the ticket attached:
      ```
@@ -376,7 +427,7 @@
 
 
 ## Admin Endpoints
-### /addIndividual
+### /addIndividual : POST
    - Request must be encoded in the body as raw JSON in the following format:
      ```
      {
@@ -393,7 +444,7 @@
      - `500` if an internal server error occurs
      - `200` if the participation was successfully saved in the DB
 
-### /addGroup
+### /addGroup : POST
    - Request must be encoded in the body as raw JSON in the following format:
      ```
      {
@@ -412,7 +463,7 @@
      - `500` if an internal server error occurs
      - `200` if the participation was successfully saved in the DB
 
-### /getParticipants
+### /getParticipants : GET
    - Request must be encoded in the body as raw JSON in the following format:
      ```
      {
@@ -427,8 +478,8 @@
      - `500` if an internal server error occurs
      - `200` if the query was successful
 
-### /verify
-   - Request must be encoded in the query as such: `/verify?ticketCode=<String>`
+### /verify : GET
+   - Request must be encoded in the query with the key `ticketCode`
    - If the query is valid, the additional fields included in the response body are:
   ```
     {
@@ -455,8 +506,8 @@
      - `404` if the specified `ticketCode` could not be found
      - `200` if the query was successful
 
-### /physicalVerify
-   - Request must be encoded in the query as such: `/physicalVerify?ticketCode=<String>`
+### /physicalVerify : GET
+   - Request must be encoded in the query with the key `ticketCode`
    - If the query is valid, the additional fields included in the response body are:
     ```
     {
@@ -476,7 +527,7 @@
      - `404` if the specified `ticketCode` could not be found
      - `200` if the query was successful
 
-### /attended
+### /attended : POST
    - Request must be encoded in the body as raw JSON in the following format:
      ```
      {
@@ -492,6 +543,42 @@
      - `404` if the specified ticketCode could not be found
      - `500` if an internal server error occurs
      - `200` if the query was successful
+
+
+### /getReceiptDetails : GET
+   - Request must be encoded in the query with the key `receiptId`
+   - The following additional fields are included in the response:
+    ```
+    {
+        receiptId: <String>,
+        ticketCode: <String>,
+        amount: <Number>,
+        imageUrl: <Cloudinary image URL>,
+        data: <Object representing post payment operations>,
+        approved: <Boolean>
+    }
+    ```
+   - Responds with:
+     - `400` if the request is malformed / invalid
+     - `404` if the specified receiptId could not be found
+     - `500` if an internal server error occurs
+     - `200` if the query was successful
+
+
+### /getUnapprovedReceipts : GET
+   - Nothing has to be encoded in the request
+   - Responds with:
+     - `500` if an internal server error occurs
+     - `200` if the query was successful
+
+
+### /approvePayment : POST
+   - Request must be encoded in the query with the key `receiptId`
+   - An additional `success: true` field is included in the response if the `receiptId` was successfully approved
+   - Responds with:
+     - `404` if the specified receiptId could not be found
+     - `500` if an internal server error occurs
+     - `200` if the `receiptId` was successfully approved
 
 # Document Model Formats
 ### All below documents will also additionally contain the __v and timestamp (createdAt, updatedAt) fields added by Mongoose
@@ -592,15 +679,27 @@
 }
 ```
 
-## `PaymentReceipt` object
+## `PaymentReceipt` object :: DEPRECATED
 ```
 {
-  orderId: <String (Razorpay order ID)>,
-  paymentId: <String (Razorpay payment ID)>,
-  receiptId: <String (Internal receipt reference)>,
-  type: < String limited by the enum ["purchase_individual", "purchase_group", "participate_individual", "participate_group"] >,
-  ticketCode: <String (ticket code of user making the payment)>, 
-  data: <Object whose fields determine what will happen after the purchase is verified>,
-  verified: <Boolean>
+    orderId: <String (Razorpay order ID)>,
+    paymentId: <String (Razorpay payment ID)>,
+    receiptId: <String (Internal receipt reference)>,
+    type: < String limited by the enum ["purchase_individual", "purchase_group", "participate_individual", "participate_group"] >,
+    ticketCode: <String (ticket code of user making the payment)>, 
+    data: <Object whose fields determine what will happen after the purchase is verified>,
+    verified: <Boolean>
+}
+```
+
+## `ManualPayment` object
+```
+{
+    receiptId: <String>,
+    ticketCode: <String>,
+    amount: <Number>,
+    imageUrl: <Cloudinary image URL>,
+    data: <Object representing post payment operations>,
+    approved: <Boolean>
 }
 ```

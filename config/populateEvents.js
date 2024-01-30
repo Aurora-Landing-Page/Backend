@@ -173,7 +173,7 @@ const groupList = [
 ]
 
 let connected = false
-const db_url = "mongodb+srv://Mrigank:mrigank123@cluster0.5qadx4w.mongodb.net/?retryWrites=true&w=majority";
+const db_url = "mongodb+srv://nilanjanbmitra:B62egXux68gfApJK@aurora-ca-login.jvgfddw.mongodb.net/?retryWrites=true&w=majority";
 
 const connectDb = async () => {
     if (connected === false) {

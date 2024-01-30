@@ -270,7 +270,7 @@ const approvePurchase = asyncHandler(async (req, res, next) => {
             const { name, email, phone } = userDoc._doc;
             const ticketImage = await userController.generateTicket(name, email, phone, ticketCode)
             const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
-            await emailController.sendConfirmation(name, email, buffer, userDoc._doc.ticketCode, receiptId);
+            await emailController.sendEventConfirmation(name, email, buffer, userDoc._doc.ticketCode, eventDoc._doc.name, receiptId);
             await eventDoc.save();
         } else if (data.type == "participate_group") {
             const eventDoc = await Event.findById(data.eventId);
@@ -288,7 +288,7 @@ const approvePurchase = asyncHandler(async (req, res, next) => {
                 const { name, email, phone } = member;
                 const ticketImage = await userController.generateTicket(name, email, phone, ticketCode)
                 const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
-                await emailController.sendConfirmation(name, email, buffer, userDoc._doc.ticketCode, receiptId);
+                await emailController.sendEventConfirmation(name, email, buffer, userDoc._doc.ticketCode, eventDoc._doc.name, receiptId);
             });
             await eventDoc.save();
         }

@@ -22,10 +22,10 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 // Create Razorpay Instance
-const razorpayInstance = new Razorpay({
-  key_id: process.env.RAZORPAY_ID,
-  key_secret: process.env.RAZORPAY_SECRET,
-});
+// const razorpayInstance = new Razorpay({
+//   key_id: process.env.RAZORPAY_ID,
+//   key_secret: process.env.RAZORPAY_SECRET,
+// });
 
 const createOrder = async (fee, data) => {
   // Testing pending

@@ -66,7 +66,8 @@ app.use((req, res, next) => {
 app.use(userRoutes);
 app.use(adminRoutes);
 
-// Testing payments
+// Only for testing payments
+// Should be removed in production version
 app.use(express.static(path.join(__dirname, "to-be-implemented")));
 
 // Attach error handling middleware
