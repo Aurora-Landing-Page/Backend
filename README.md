@@ -1,7 +1,3 @@
-# README IS NOT UP TO DATE
-  New payment system details have not yet been added, however sample requests are present in the Postman Workspace shared with Mrigank Sir.
-  Physical tickets logic and backend flow have also not yet been added to the README.
-
 # Steps to Run
 - Make dotenv file:
   ```
