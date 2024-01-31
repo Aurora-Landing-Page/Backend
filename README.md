@@ -421,6 +421,24 @@
      - `500` if the ticket could not be generated
      - `200` if the payment was confirmed and participation was saved
 
+   ### /getPaymentStatus : POST
+   - The email of the user whose payment status is to be checked should be encoded in the body as JSON:
+    ```
+      {
+        "email": <String>,
+      }
+     ```
+   - The following additional fields are included in the response if the query was successful:
+     ```
+      {
+        "receipts": <Array of ManualPayments>,
+      }
+     ```
+   - Responds with:
+     - `400` if the request was malformed
+     - `404` if the specified email could not be found
+     - `500` if an internal server error occurs
+     - `200` if the query was successful
 
 ## Admin Endpoints
 ### /addIndividual : POST
