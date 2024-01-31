@@ -235,16 +235,16 @@
      }
      ```
    - If the purchase was successfully created, the following additional fields are included in the response body:
-    ```
-    {
-        receiptId: <String>,
-        ticketCode: <String>,
-        amount: <Number>,
-        imageUrl: <Cloudinary image URL>,
-        data: <Object representing post payment operations>,
-        approved: <Boolean>
-    }
-    ```
+      ```
+      {
+          receiptId: <String>,
+          ticketCode: <String>,
+          amount: <Number>,
+          imageUrl: <Cloudinary image URL>,
+          data: <Object representing post payment operations>,
+          approved: <Boolean>
+      }
+      ```
    - `imageUrl` will be empty here as image has not yet been uploaded
    - Responds with:
      - `400` if the request is malformed
@@ -423,7 +423,7 @@
 
    ### /getPaymentStatus : POST
    - The email of the user whose payment status is to be checked should be encoded in the body as JSON:
-    ```
+     ```
       {
         "email": <String>,
       }
@@ -523,19 +523,19 @@
 ### /physicalVerify : GET
    - Request must be encoded in the query with the key `ticketCode`
    - If the query is valid, the additional fields included in the response body are:
-    ```
-    {
-      __id: <MongoDB ObjectID>
-      name: <String>,
-      email: <String>,
-      phone: <Number>,
-      purchasedTickets: <Boolean Array of 6 elements>,
-      attendedEvent: <Boolean Array of 6 elements>,
-      ticketCode: <String>,
-      onlineRegistrationDone: <Boolean>,
-      freeParticipations: <Number>
-    }
-    ```
+     ```
+      {
+        __id: <MongoDB ObjectID>
+        name: <String>,
+        email: <String>,
+        phone: <Number>,
+        purchasedTickets: <Boolean Array of 6 elements>,
+        attendedEvent: <Boolean Array of 6 elements>,
+        ticketCode: <String>,
+        onlineRegistrationDone: <Boolean>,
+        freeParticipations: <Number>
+      }
+     ```
    - Responds with:
      - `400` if the request is malformed / invalid
      - `404` if the specified `ticketCode` could not be found
@@ -562,16 +562,16 @@
 ### /getReceiptDetails : GET
    - Request must be encoded in the query with the key `receiptId`
    - The following additional fields are included in the response:
-    ```
-    {
-        receiptId: <String>,
-        ticketCode: <String>,
-        amount: <Number>,
-        imageUrl: <Cloudinary image URL>,
-        data: <Object representing post payment operations>,
-        approved: <Boolean>
-    }
-    ```
+     ```
+      {
+          receiptId: <String>,
+          ticketCode: <String>,
+          amount: <Number>,
+          imageUrl: <Cloudinary image URL>,
+          data: <Object representing post payment operations>,
+          approved: <Boolean>
+      }
+     ```
    - Responds with:
      - `400` if the request is malformed / invalid
      - `404` if the specified receiptId could not be found
