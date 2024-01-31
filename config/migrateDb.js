@@ -9,8 +9,8 @@ const CA = require("../models/caModel");
 const dotenv = require("dotenv");
 dotenv.config();
 
-const db1 = "mongodb+srv://nilanjanbmitra:B62egXux68gfApJK@aurora-ca-login.jvgfddw.mongodb.net/?retryWrites=true&w=majority";
-const db2 = "mongodb+srv://Mrigank:mrigank123@cluster0.5qadx4w.mongodb.net/?retryWrites=true&w=majority";
+const db1 = "";
+const db2 = "";
 let connected1 = false;
 let connected2 = false;
 
