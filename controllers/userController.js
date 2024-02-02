@@ -331,47 +331,14 @@ const getUserData = asyncHandler(async (req, res, next) => {
 });
 
 const getUserPaymentStatus = asyncHandler(async (req, res, next) => {
-  const email = req.body.email;
-  if (!email) { next(new UserError("Malformed request!")); }
-
   try {
-    const userDoc = await User.findOne({email});
+    const email = req.body.email;
+
+    const userDoc = await User.findOne({ email });
     if (userDoc) {
-      User.aggregate([
-      {
-          $match: {
-            email: email
-          }
-      },
-      {
-          $lookup: {
-            from: 'manual_payments',
-            localField: 'associatedPayments',
-            foreignField: 'receiptId',
-            as: 'receipts'
-          }
-      },
-      {
-          $unwind: '$receipts'
-      },
-      {
-          $project: {
-            name: 1,
-            email: 1,
-            receipt: '$receipts'
-          }
-      },
-      {
-          $group: {
-            _id: '0',
-            name: { $first: '$name' },
-            email: { $first: '$email' },
-            receipts: { $push: '$receipt' }
-          }
-      }
-      ])
-      .then((result) => { successHandler(new SuccessResponse("User Found"), res, { receipts: result[0].receipts }); })
-      .catch((err) => { throw err; });
+      const { associatedPayments } = userDoc._doc;
+      let paid = associatedPayments;
+      successHandler(new SuccessResponse("User Found"), res, paid);
     } else {
       next(new NotFoundError("User not found"));
     }
