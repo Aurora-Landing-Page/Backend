@@ -29,6 +29,11 @@ const PaymentSchema = new mongoose.Schema({
     approved: {
         type: Boolean,
         default: false
+    },
+
+    denied: {
+        type: Boolean,
+        default: false
     }
     }, 
     { timestamps: true }

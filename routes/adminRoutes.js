@@ -21,6 +21,7 @@ router.get("/physicalVerify", requireAdmin, eventController.physicalVerify);
 // New Payment System Routes
 router.get("/getReceiptDetails", requireAdmin, newPaymentController.getReceipt);
 router.post("/approvePayment", requireAdmin, newPaymentController.approvePurchase);
+router.post("/denyPayment", requireAdmin, newPaymentController.denyPurchase);
 router.get("/getUnapprovedReceipts", requireAdmin, newPaymentController.getAllUnapprovedReceipts);
 
 // Exporting Router

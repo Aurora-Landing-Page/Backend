@@ -302,6 +302,25 @@ const approvePurchase = asyncHandler(async (req, res, next) => {
     }
 });
 
+const denyPurchase = asyncHandler(async (req, res, next) => {
+  try {
+      const { receiptId } = req.query;
+      const receiptDoc = await ManualPayment.findOne({ receiptId });
+      
+      if (!receiptDoc) {
+        next(new NotFoundError("Specified receiptId could not be found"));
+        return;
+      }
+
+      receiptDoc.denied = true;
+      await receiptDoc.save();
+      successHandler(new SuccessResponse("Payment has been approved!"), res, { success: true });
+  } catch (error) {
+      console.error(error);
+      next(new ServerError("Payment could not be approved!"))
+  }
+});
+
 const getReceipt = asyncHandler(async(req, res, next) => {
     const { receiptId } = req.query
   
@@ -325,7 +344,7 @@ const getReceipt = asyncHandler(async(req, res, next) => {
 
 const getAllUnapprovedReceipts = asyncHandler(async(req, res, next) => {
     try {
-        const receipts = await ManualPayment.find({ approved: false });
+        const receipts = await ManualPayment.find({ $and: [{ approved: false }, { denied: false }] });
         successHandler(new SuccessResponse("Query successful"), res, { unapprovedPayments: receipts });
     } catch (error) {
         console.error(error);
@@ -337,6 +356,7 @@ module.exports = {
     uploadScreenshot,
     createPurchaseIntent,
     approvePurchase,
+    denyPurchase,
     getReceipt,
     getAllUnapprovedReceipts
 };

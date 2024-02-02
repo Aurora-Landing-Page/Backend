@@ -69,6 +69,7 @@
 - The following are the new (manual) payment verification endpoints:
   - /getReceiptDetails : `GET`
   - /approvePayment : `POST`
+  - /denyPayment : `POST`
   - /getUnapprovedReceipts : `GET` 
 - The above endpoints respond with:
   - `403` if the JWT is invalid / absent or if the token does not correspond to an admin account
@@ -569,7 +570,8 @@
           amount: <Number>,
           imageUrl: <Cloudinary image URL>,
           data: <Object representing post payment operations>,
-          approved: <Boolean>
+          approved: <Boolean>,
+          denied: <Boolean>
       }
      ```
    - Responds with:
@@ -585,7 +587,6 @@
      - `500` if an internal server error occurs
      - `200` if the query was successful
 
-
 ### /approvePayment : POST
    - Request must be encoded in the query with the key `receiptId`
    - An additional `success: true` field is included in the response if the `receiptId` was successfully approved
@@ -593,6 +594,16 @@
      - `404` if the specified receiptId could not be found
      - `500` if an internal server error occurs
      - `200` if the `receiptId` was successfully approved
+
+
+### /denyPayment : POST
+   - Request must be encoded in the query with the key `receiptId`
+   - `denied` payments will not be included in further `/getUnapprovedReceipts` query responses
+   - An additional `success: true` field is included in the response if the `receiptId` was successfully approved
+   - Responds with:
+     - `404` if the specified receiptId could not be found
+     - `500` if an internal server error occurs
+     - `200` if the `receiptId` was successfully denied
 
 # Document Model Formats
 ### All below documents will also additionally contain the __v and timestamp (createdAt, updatedAt) fields added by Mongoose
@@ -714,6 +725,7 @@
     amount: <Number>,
     imageUrl: <Cloudinary image URL>,
     data: <Object representing post payment operations>,
-    approved: <Boolean>
+    approved: <Boolean>,
+    denied: <Boolean>
 }
 ```
