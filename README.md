@@ -380,10 +380,10 @@
      ```
      {
          "email": <String>,
-         "type": <String (user | ca)>
+         "type": <String (user || ca)>
      }
      ```
-   - The type must be set to `user` or `CA`
+   - The type must be set to `user` or `ca`
    - If the query is valid, a new 5 letter password is generated and stored in the DB
    - An email with the new password is then sent to the user/CA
    - Responds with:

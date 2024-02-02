@@ -414,7 +414,7 @@ const forgotPass = asyncHandler(async (req, res, next) => {
 
   if (type === "user") {
     await resetPassAndSendMail(User, email, res, next);
-  } else if (type === "CA") {
+  } else if (type === "ca") {
     await resetPassAndSendMail(CA, email, res, next);
   } else {
     next(new UserError("Invalid user type"));
