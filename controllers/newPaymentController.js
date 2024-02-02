@@ -242,6 +242,7 @@ const approvePurchase = asyncHandler(async (req, res, next) => {
         const userDoc = await User.findOne({ ticketCode });
         userDoc.associatedPayments.push(receiptDoc.receiptId);
         receiptDoc.approved = true;
+        receiptDoc.denied = false;
     
         if (data.type == "purchase_individual") {
             userDoc.purchasedTickets = data.purchasedTickets;
@@ -306,6 +307,8 @@ const denyPurchase = asyncHandler(async (req, res, next) => {
   try {
       const { receiptId } = req.query;
       const receiptDoc = await ManualPayment.findOne({ receiptId });
+      const userDoc = await User.findOne({ ticketCode: receiptDoc._doc.ticketCode });
+      const { name, email } = userDoc;
       
       if (!receiptDoc) {
         next(new NotFoundError("Specified receiptId could not be found"));
@@ -313,8 +316,10 @@ const denyPurchase = asyncHandler(async (req, res, next) => {
       }
 
       receiptDoc.denied = true;
+      receiptDoc.approved = false;
       await receiptDoc.save();
-      successHandler(new SuccessResponse("Payment has been approved!"), res, { success: true });
+      await emailController.sendDenial(name, email, receiptId);
+      successHandler(new SuccessResponse("Payment has been denied!"), res, { success: true });
   } catch (error) {
       console.error(error);
       next(new ServerError("Payment could not be approved!"))
