@@ -8,7 +8,7 @@ dotenv.config();
 
 let dataArray = [];
 
-fs.createReadStream('data.csv')
+fs.createReadStream('out.csv')
  .pipe(csv())
  .on('data', (row) => {
    dataArray.push(row);

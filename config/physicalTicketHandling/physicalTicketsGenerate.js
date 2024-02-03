@@ -45,9 +45,9 @@ async function generateTicket(name, email, phone, ticketCode) {
    fontCanvas.print(codeFont, 0, 0, ticketCode).rotate(90);
    ticketImage.blit(fontCanvas, 65, 65);
 
-   ticketImage.print(font, 995, 383, name);
-   ticketImage.print(font, 995, 449, email);
-   ticketImage.print(font, 995, 514, phone);
+  //  ticketImage.print(font, 995, 383, name);
+  //  ticketImage.print(font, 995, 449, email);
+  //  ticketImage.print(font, 995, 514, phone);
    ticketImage.resize(1200, Jimp.AUTO);
 
    return ticketImage;
@@ -56,7 +56,7 @@ async function generateTicket(name, email, phone, ticketCode) {
 const TICKET_SIZE = 570;
 const X_PADDING = 25;
 const Y_PADDING = 15;
-const TICKET_AMOUNT = 3;
+const TICKET_AMOUNT = 1500;
 
 async function main() {
  const ticketCodes = [];
@@ -97,11 +97,12 @@ async function main() {
  const writer = csvWriter({
     path: 'out.csv',
     header: [
+      {id: 'dummy', title: 'DUMMY_VAL'},
       {id: 'ticketCode', title: 'TICKET_CODE'}
     ]
  });
 
- const records = ticketCodes.map(code => ({ticketCode: code}));
+ const records = ticketCodes.map(code => ({dummy: 'dummy', ticketCode: code}));
  writer.writeRecords(records)
     .then(() => console.log('...Done'));
 }
