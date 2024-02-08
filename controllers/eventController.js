@@ -240,7 +240,12 @@ const getParticipants = asyncHandler(async (req, res, next) => {
             ])
             .exec()
             .then(obj => {
-              successHandler(new SuccessResponse("DB Query Successful"), res, { leaders: obj, number: obj.length })
+              let number = 0;
+              obj.forEach((element) => {
+                number += element.group.members.length
+              })
+
+              successHandler(new SuccessResponse("DB Query Successful"), res, { leaders: obj, number })
             })
             .catch(err => {
               console.error(err)

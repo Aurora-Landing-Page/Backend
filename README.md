@@ -496,7 +496,7 @@
          "number": <Number>
      }
      ```
-   - `number` denotes the total number of participants / participating groups in the `participants` array
+   - `number` denotes the total number of participants in the `participants` array
    - If the query is valid, the contactUsMessage will be stored in the DB
    - Responds with:
      - `400` if the request is malformed / invalid
@@ -600,7 +600,7 @@
 
 ### /getApprovedReceipts : GET
    - Nothing has to be encoded in the request
-   - Please note that the `number` property may not correctly reflect the number of tickets sold / participants as group purchases are counted as one irrespective of the number of tickets bought / the number of participants in that specific purchase 
+   - `number` accurately reflects the number of tickets sold + the number of actual participants
    - The following additional fields are included in the response:
      ```
       {
@@ -615,7 +615,7 @@
 ### /getApprovedTicketReceipts : GET
    - Nothing has to be encoded in the request
    - Only includes those payments which were for buying tickets
-   - Please note that the `number` property may not correctly reflect the number of tickets sold as group ticket purchases are counted as one irrespective of the number of tickets bought in that specific purchase 
+   - `number` accurately reflects the number of actual tickets sold
    - The following additional fields are included in the response:
      ```
       {

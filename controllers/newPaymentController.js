@@ -355,7 +355,12 @@ const getAllApprovedReceipts = asyncHandler(async(req, res, next) => {
           { denied: false },
         ],
       });
-      successHandler(new SuccessResponse("Query successful"), res, { approvedPayments: receipts, number: receipts.length });
+
+      let number = 0;
+      receipts.forEach((element) => {
+        number += element.data.members.length 
+      })
+      successHandler(new SuccessResponse("Query successful"), res, { approvedPayments: receipts, number });
   } catch (error) {
       console.error(error);
       next(new ServerError("Query could not be executed"));
@@ -375,7 +380,12 @@ const getApprovedTicketReceipts = asyncHandler(async(req, res, next) => {
           },
         ],
       });
-      successHandler(new SuccessResponse("Query successful"), res, { approvedPayments: receipts, number: receipts.length });
+
+      let number = 0;
+      receipts.forEach((element) => {
+        number += element.data.members.length 
+      })
+      successHandler(new SuccessResponse("Query successful"), res, { approvedPayments: receipts, number });
   } catch (error) {
       console.error(error);
       next(new ServerError("Query could not be executed"));
