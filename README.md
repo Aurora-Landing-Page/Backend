@@ -489,6 +489,14 @@
          "type": <String (individual | group)>
      }
      ```
+   - The following additional fields are included in the response:
+     ```
+     {
+         "participants": <Array of participants / participating groups>,
+         "number": <Number>
+     }
+     ```
+   - `number` denotes the total number of participants / participating groups in the `participants` array
    - If the query is valid, the contactUsMessage will be stored in the DB
    - Responds with:
      - `400` if the request is malformed / invalid
