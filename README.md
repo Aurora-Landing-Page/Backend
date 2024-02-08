@@ -71,6 +71,7 @@
   - /getReceiptDetails : `GET`
   - /approvePayment : `POST`
   - /denyPayment : `POST`
+  - /getApprovedReceipts : `GET` 
   - /getUnapprovedReceipts : `GET` 
 - The above endpoints respond with:
   - `403` if the JWT is invalid / absent or if the token does not correspond to an admin account
@@ -589,8 +590,28 @@
      - `200` if the query was successful
 
 
+### /getApprovedReceipts : GET
+   - Nothing has to be encoded in the request
+   - The following additional fields are included in the response:
+     ```
+      {
+          approvedPayments: <Array of ManualPayments>,
+          number: <Number>
+      }
+     ```
+   - Responds with:
+     - `500` if an internal server error occurs
+     - `200` if the query was successful
+
 ### /getUnapprovedReceipts : GET
    - Nothing has to be encoded in the request
+   - The following additional fields are included in the response:
+     ```
+      {
+          unapprovedPayments: <Array of ManualPayments>,
+          number: <Number>
+      }
+     ```
    - Responds with:
      - `500` if an internal server error occurs
      - `200` if the query was successful

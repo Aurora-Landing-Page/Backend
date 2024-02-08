@@ -347,10 +347,20 @@ const getReceipt = asyncHandler(async(req, res, next) => {
     }
 })
 
+const getAllApprovedReceipts = asyncHandler(async(req, res, next) => {
+  try {
+      const receipts = await ManualPayment.find({ $and: [{ approved: true }, { denied: false }] });
+      successHandler(new SuccessResponse("Query successful"), res, { approvedPayments: receipts, number: receipts.length });
+  } catch (error) {
+      console.error(error);
+      next(new ServerError("Query could not be ececuted"));
+  }
+})
+
 const getAllUnapprovedReceipts = asyncHandler(async(req, res, next) => {
     try {
         const receipts = await ManualPayment.find({ $and: [{ approved: false }, { denied: false }] });
-        successHandler(new SuccessResponse("Query successful"), res, { unapprovedPayments: receipts });
+        successHandler(new SuccessResponse("Query successful"), res, { unapprovedPayments: receipts, number: receipts.length });
     } catch (error) {
         console.error(error);
         next(new ServerError("Query could not be ececuted"));
@@ -363,5 +373,6 @@ module.exports = {
     approvePurchase,
     denyPurchase,
     getReceipt,
+    getAllApprovedReceipts,
     getAllUnapprovedReceipts
 };
