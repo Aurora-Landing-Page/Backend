@@ -24,6 +24,7 @@ router.get("/getReceiptDetails", requireAdmin, newPaymentController.getReceipt);
 router.post("/approvePayment", requireAdmin, newPaymentController.approvePurchase);
 router.post("/denyPayment", requireAdmin, newPaymentController.denyPurchase);
 router.get("/getApprovedReceipts", requireAdmin, newPaymentController.getAllApprovedReceipts);
+router.get("/getApprovedTicketReceipts", requireAdmin, newPaymentController.getApprovedTicketReceipts);
 router.get("/getUnapprovedReceipts", requireAdmin, newPaymentController.getAllUnapprovedReceipts);
 
 // Exporting Router

@@ -349,11 +349,36 @@ const getReceipt = asyncHandler(async(req, res, next) => {
 
 const getAllApprovedReceipts = asyncHandler(async(req, res, next) => {
   try {
-      const receipts = await ManualPayment.find({ $and: [{ approved: true }, { denied: false }] });
+      const receipts = await ManualPayment.find({
+        $and: [
+          { approved: true },
+          { denied: false },
+        ],
+      });
       successHandler(new SuccessResponse("Query successful"), res, { approvedPayments: receipts, number: receipts.length });
   } catch (error) {
       console.error(error);
-      next(new ServerError("Query could not be ececuted"));
+      next(new ServerError("Query could not be executed"));
+  }
+})
+
+const getApprovedTicketReceipts = asyncHandler(async(req, res, next) => {
+  try {
+      const receipts = await ManualPayment.find({
+        $and: [
+          { approved: true },
+          { denied: false },
+          {
+            "data.type": {
+              $in: ["purchase_individual", "purchase_group"],
+            },
+          },
+        ],
+      });
+      successHandler(new SuccessResponse("Query successful"), res, { approvedPayments: receipts, number: receipts.length });
+  } catch (error) {
+      console.error(error);
+      next(new ServerError("Query could not be executed"));
   }
 })
 
@@ -363,7 +388,7 @@ const getAllUnapprovedReceipts = asyncHandler(async(req, res, next) => {
         successHandler(new SuccessResponse("Query successful"), res, { unapprovedPayments: receipts, number: receipts.length });
     } catch (error) {
         console.error(error);
-        next(new ServerError("Query could not be ececuted"));
+        next(new ServerError("Query could not be executed"));
     }
 })
 
@@ -374,5 +399,6 @@ module.exports = {
     denyPurchase,
     getReceipt,
     getAllApprovedReceipts,
+    getApprovedTicketReceipts,
     getAllUnapprovedReceipts
 };

@@ -189,7 +189,7 @@ const getParticipants = asyncHandler(async (req, res, next) => {
                 ])
                 .exec()
                 .then(obj => {
-                  successHandler(new SuccessResponse("DB Query Successful"), res, { participants: obj })
+                  successHandler(new SuccessResponse("DB Query Successful"), res, { participants: obj, number: obj.length })
                 })
                 .catch(err => {
                   console.error(err)
@@ -240,7 +240,7 @@ const getParticipants = asyncHandler(async (req, res, next) => {
             ])
             .exec()
             .then(obj => {
-              successHandler(new SuccessResponse("DB Query Successful"), res, { leaders: obj })
+              successHandler(new SuccessResponse("DB Query Successful"), res, { leaders: obj, number: obj.length })
             })
             .catch(err => {
               console.error(err)

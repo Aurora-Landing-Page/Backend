@@ -72,6 +72,7 @@
   - /approvePayment : `POST`
   - /denyPayment : `POST`
   - /getApprovedReceipts : `GET` 
+  - /getApprovedTicketReceipts : `GET` 
   - /getUnapprovedReceipts : `GET` 
 - The above endpoints respond with:
   - `403` if the JWT is invalid / absent or if the token does not correspond to an admin account
@@ -589,9 +590,24 @@
      - `500` if an internal server error occurs
      - `200` if the query was successful
 
-
 ### /getApprovedReceipts : GET
    - Nothing has to be encoded in the request
+   - Please note that the `number` property may not correctly reflect the number of tickets sold / participants as group purchases are counted as one irrespective of the number of tickets bought / the number of participants in that specific purchase 
+   - The following additional fields are included in the response:
+     ```
+      {
+          approvedPayments: <Array of ManualPayments>,
+          number: <Number>
+      }
+     ```
+   - Responds with:
+     - `500` if an internal server error occurs
+     - `200` if the query was successful
+
+### /getApprovedTicketReceipts : GET
+   - Nothing has to be encoded in the request
+   - Only includes those payments which were for buying tickets
+   - Please note that the `number` property may not correctly reflect the number of tickets sold as group ticket purchases are counted as one irrespective of the number of tickets bought in that specific purchase 
    - The following additional fields are included in the response:
      ```
       {
