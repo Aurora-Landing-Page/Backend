@@ -15,7 +15,6 @@ const emailController = require("./emailController");
 const { User } = require("../models/userModel");
 const { PhysicalUser } = require("../models/physicalUserModel");
 const CA = require("../models/caModel");
-const Event = require("../models/event");
 const ContactUsMessage = require("../models/contactUsMessage");
 
 // Import environment variables
@@ -472,6 +471,22 @@ const generateQR = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getAllCas = asyncHandler(async (req, res, next) => {
+  const caDocs = await CA.find({ });
+  
+  if (caDocs) {
+    const out = [];
+
+    caDocs.forEach(element => {
+      const { password, createdAt, updatedAt, __v, ...otherFields } = element._doc;
+      out.push(otherFields);
+    });
+
+    successHandler(new SuccessResponse("Query Successful!"), res, { data: out });
+  } 
+  else { next(new NotFoundError("No CAs found!")); }
+})
+
 module.exports = {
   registerUser,
   registerCa,
@@ -485,5 +500,6 @@ module.exports = {
   generateQR,
   generateCode,
   generateTicket,
-  getUserPaymentStatus
+  getUserPaymentStatus,
+  getAllCas
 };
