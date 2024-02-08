@@ -62,6 +62,7 @@
   - /addGroup : `POST`
   - /addIndividual : `POST`
   - /getParticipants : `GET`
+  - /getAllCas : `GET`
   - /getReceipt : `GET`
   - /attended : `POST`
   - /verify : `GET`
@@ -491,6 +492,13 @@
      - `400` if the request is malformed / invalid
      - `404` if the specified eventId could not be found
      - `500` if an internal server error occurs
+     - `200` if the query was successful
+
+### /getAllCas : GET
+   - If the query is valid, all CAs will be returned as an array (`data`) of objects.
+   - The additional field `data` is included in the response if successful.
+   - Responds with:
+     - `404` if the query returned no CAs
      - `200` if the query was successful
 
 ### /verify : GET
