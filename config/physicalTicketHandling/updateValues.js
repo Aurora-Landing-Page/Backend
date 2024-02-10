@@ -1,6 +1,7 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const mongoose = require('mongoose');
+const emailController = require("../../controllers/emailController");
 const {PhysicalUser} = require('../../models/physicalUserModel');
 
 const dotenv = require("dotenv");
@@ -44,6 +45,7 @@ async function main() {
             physicalUserDoc.phone = element.PHONE;
       
             await physicalUserDoc.save();
+            await emailController.sendSignupMail(element.NAME, element.EMAIL);
             console.log("Users updated: ", i + 1, "/", dataArray.length);
         } catch (error) {
             console.error(error);
