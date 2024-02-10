@@ -491,6 +491,11 @@ const sendPhysicalMail = asyncHandler(async (req, res, next) => {
   const {name, email, ticketCode} = req.body;
   const physicalDoc = await PhysicalUser.findOne({ ticketCode });
 
+  if (!name || !email || !ticketCode) {
+    next(new UserError("Malformed Request!"));
+    return;
+  }
+  
   if (physicalDoc) {
     try {
       await emailController.sendPhysicalMail(name, email, ticketCode);
