@@ -73,7 +73,7 @@ const titles = {
 
 // Event payment values according to datetime
 const payments = {
-  accomodation:           300,
+  accomodation:           1200,
 
   day_zero_pronite:       500,    // Till 11:59 PM, 14 Feb 24 (IST)
   day_one_pronite:        700,    // Till 10:00 AM, 16 Feb 24 (IST)
@@ -81,7 +81,7 @@ const payments = {
   day_three_pronite:      300,    // Till 10:00 AM, 18 Feb 24 (IST)
   // Payments close after 10:00 AM, 18 Feb 24
 
-  day_zero_whole_event:   800,    // Till 11:59 PM, 14 Feb 24 (IST)
+  day_zero_whole_event:   599,    // Till 11:59 PM, 14 Feb 24 (IST)
   day_one_whole_event:    1000,   // Till 10:00 AM, 16 Feb 24 (IST)
   day_two_whole_event:    700,    // Till 10:00 AM, 17 Feb 24 (IST)
   day_three_whole_event:  500     // Till 10:00 AM, 18 Feb 24 (IST)
@@ -91,10 +91,10 @@ const payments = {
 // All datetimes are handled in UTC
 const timeouts = {
   base:        "1970-01-01T00:00:00.000Z",     // Epoch start as baseline
-  day_zero:    "2024-02-14T18:29:00.000Z",     // Till 11:59 PM, 14 Feb 24 (IST)
-  day_one:     "2024-02-16T04:30:00.000Z",     // Till 10:00 AM, 16 Feb 24 (IST)
-  day_two:     "2024-02-17T04:30:00.000Z",     // Till 10:00 AM, 17 Feb 24 (IST)
-  day_three:   "2024-02-18T04:30:00.000Z",     // Till 10:00 AM, 18 Feb 24 (IST)
+  day_zero:    "2024-03-14T18:29:00.000Z",     // Till 11:59 PM, 14 Feb 24 (IST)
+  day_one:     "2024-03-15T04:30:00.000Z",     // Till 10:00 AM, 16 Feb 24 (IST)
+  day_two:     "2024-03-16T04:30:00.000Z",     // Till 10:00 AM, 17 Feb 24 (IST)
+  day_three:   "2024-03-17T04:30:00.000Z",     // Till 10:00 AM, 18 Feb 24 (IST)
 }
 
 module.exports = { titles, payments, timeouts }
