@@ -482,9 +482,25 @@ const getAllCas = asyncHandler(async (req, res, next) => {
       out.push(otherFields);
     });
 
-    successHandler(new SuccessResponse("Query Successful!"), res, { data: out });
+    successHandler(new SuccessResponse("Query Successful!"), res, { data: out, number: data.length });
   } 
   else { next(new NotFoundError("No CAs found!")); }
+})
+
+const sendPhysicalMail = asyncHandler(async (req, res, next) => {
+  const {name, email, ticketCode} = req.body;
+  const physicalDoc = await PhysicalUser.findOne({ ticketCode });
+
+  if (physicalDoc) {
+    try {
+      await emailController.sendPhysicalMail(name, email, ticketCode);
+      successHandler(new SuccessResponse("Email Sent Successfully!"), res);
+    } catch (error) {
+      console.error(error);
+      next(new ServerError("Email could not be sent"))
+    }
+  } 
+  else { next(new NotFoundError("Invalid pass code!")); }
 })
 
 module.exports = {
@@ -501,5 +517,6 @@ module.exports = {
   generateCode,
   generateTicket,
   getUserPaymentStatus,
-  getAllCas
+  getAllCas,
+  sendPhysicalMail
 };
