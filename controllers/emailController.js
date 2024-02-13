@@ -8,6 +8,7 @@ const SuccessResponse = require("../utils/successResponses")
 const successHandler = require("./successController")
 const { User } = require("../models/userModel");
 const CA = require("../models/caModel");
+const { PhysicalUser } = require("../models/physicalUserModel");
 
 // Nodemailer settings
 const transporter = nodemailer.createTransport({
@@ -1105,7 +1106,7 @@ const sendForgotPassMail = async (email, name, code) => {
 }
 
 const sendQRMail = async (name, email, image, code, receiptId) => {
-  const subject = receiptId ? `Welcome to Aurora '24 | Payment Intent Received!`: "Aurora Pass";
+  const subject = receiptId ? `Welcome to Aurora '24 | Payment Confirmation Pending!`: "Aurora Pass";
   var mailOptions = {
     from: process.env.EMAIL,
     to: email,
@@ -1267,6 +1268,11 @@ const sendQRMail = async (name, email, image, code, receiptId) => {
                           </td>
                         </tr>
                         <tr>
+                          <td align="center" style="font-size:0px;padding:10px 25px;padding-right:16px;padding-left:25px;word-break:break-word;">
+                            <div style="font-family:open Sans Helvetica, Arial, sans-serif;font-size:16px;line-height:1;text-align:center;color:white;"><strong>Please note that this mail does not ensure that the attached pass guarantees your entry to the event. We reserve the right to revoke this pass at any time without prior notice, if the payment is found to be inadequate.</strong></div>
+                          </td>
+                        </tr>
+                        <tr>
                           <td align="center" style="font-size:0px;padding:10px 25px;padding-right:25px;padding-left:25px;word-break:break-word;">
                             <div style="font-family:open Sans Helvetica, Arial, sans-serif;font-size:16px;line-height:1;text-align:center;color:white;">Aurora Team</div>
                           </td>
@@ -1312,7 +1318,7 @@ const sendConfirmation = async (name, email, image, ticketCode, receiptId) => {
   var mailOptions = {
     from: process.env.EMAIL,
     to: email,
-    subject: `Payment approved | Welcome to Aurora '24`,
+    subject: `Payment Approved! | Welcome to Aurora '24`,
     html: `<!doctype html>
     <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
     

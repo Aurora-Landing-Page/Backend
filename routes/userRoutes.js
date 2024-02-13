@@ -24,7 +24,7 @@ router.post("/getPaymentStatus", userController.getUserPaymentStatus);
 router.get("/getUserData", requireAuth, userController.getUserData);
 router.get("/getCaData", requireAuth, userController.getCaData);
 router.get("/generateTicket", requireAuth, userController.generateQR);
-router.post("/sendPhysicalMail", requireAuth, userController.sendPhysicalMail)
+router.post("/sendPhysicalMail", userController.sendPhysicalMail)
 
 // DEPRECATED
 // RazorPay Payment Routes
