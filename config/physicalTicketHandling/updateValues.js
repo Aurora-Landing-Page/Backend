@@ -48,7 +48,7 @@ async function main() {
       let updatedDataArray = [];
       for (let i = 0; i < dataArray.length; i++) {
         const element = dataArray[i];
-        if (element.EMAIL_SENT == 'true') {
+        if (element.EMAIL_SENT == "yes") {
           console.log(`Email already sent to ${element.EMAIL}, skipping`); 
           console.log("Users updated: ", i + 1, "/", dataArray.length);
           updatedDataArray.push(element);
@@ -64,7 +64,7 @@ async function main() {
             physicalUserDoc.name = element.NAME;
             physicalUserDoc.email = element.EMAIL;
             physicalUserDoc.phone = element.PHONE;
-            element.EMAIL_SENT = true;
+            element.EMAIL_SENT = "yes";
       
             await physicalUserDoc.save();
             await emailController.sendPhysicalMail(element.NAME, element.EMAIL, element.TICKET_CODE);
