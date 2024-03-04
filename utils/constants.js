@@ -81,7 +81,7 @@ const payments = {
   day_three_pronite:      300,    // Till 10:00 AM, 18 Feb 24 (IST)
   // Payments close after 10:00 AM, 18 Feb 24
 
-  day_zero_whole_event:   599,    // Till 11:59 PM, 14 Feb 24 (IST)
+  day_zero_whole_event:   449,    // Till 11:59 PM, 14 Feb 24 (IST)
   day_one_whole_event:    1000,   // Till 10:00 AM, 16 Feb 24 (IST)
   day_two_whole_event:    700,    // Till 10:00 AM, 17 Feb 24 (IST)
   day_three_whole_event:  500     // Till 10:00 AM, 18 Feb 24 (IST)
