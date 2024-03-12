@@ -35,7 +35,7 @@ fs.readFile('/home/nilanjan-mitra/Desktop/Backend/config/scripts/data.json', 'ut
         const { name, email, phone } = member;
         const ticketImage = await userController.generateTicket(name, email, phone, ticketCode)
         const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
-        emailController.sendEventConfirmation(name, email, buffer, ticketCode, receiptId);
+        emailController.sendConfirmation(name, email, buffer, ticketCode, receiptId);
       });
     } else if (payment.data.eventId) {
       const eventName = await Event.findById(payment.data.eventId)
@@ -44,7 +44,7 @@ fs.readFile('/home/nilanjan-mitra/Desktop/Backend/config/scripts/data.json', 'ut
           const { name, email, phone } = member;
           const ticketImage = await userController.generateTicket(name, email, phone, ticketCode)
           const buffer = await ticketImage.getBufferAsync(Jimp.MIME_PNG);
-          emailController.sendEventConfirmation(name, email, buffer, eventName, ticketCode, receiptId);
+          emailController.sendEventConfirmation(name, email, buffer, ticketCode, eventName._doc.name, receiptId);
         });
       }
       else { console.log("Invalid Event ID specified: ", payment.data.eventId) }
