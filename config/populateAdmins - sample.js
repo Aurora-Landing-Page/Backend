@@ -22,10 +22,10 @@ function generateCode(length = 8) {
 
 const admins = [
     {
-        name: "John Doe",
-        password: "password",
+        name: "John",
+        password: "pass",
         email: "john@gmail.com",
-        phone: 8787377237,
+        phone: 9999999999,
         isAdmin: true
     }
 ]
@@ -49,6 +49,7 @@ const connectDb = async () => {
 const populate = async () => {
     if (await connectDb()) {
         admins.forEach(async (element) => {
+            await User.deleteOne({ email: element.email });
             const hashedPassword = bcryptjs.hashSync(element.password, 10);
             let ticketCode = generateCode(6);
             const checkTicketCode = await User.findOne({ ticketCode });

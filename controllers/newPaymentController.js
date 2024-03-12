@@ -358,7 +358,8 @@ const getAllApprovedReceipts = asyncHandler(async(req, res, next) => {
 
       let number = 0;
       receipts.forEach((element) => {
-        number += element.data.members.length 
+        if (element.data.members) { number += element.data.members.length }
+        else { number += 1 } 
       })
       successHandler(new SuccessResponse("Query successful"), res, { approvedPayments: receipts, number });
   } catch (error) {

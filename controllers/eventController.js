@@ -263,38 +263,13 @@ const getParticipantsv2 = asyncHandler(async(req, res, next) => {
   if (!eventId) { next(new UserError("Malformed Request!")) }
   else {
     try {
-      const result = await ManualPayment.aggregate([
-      {
-        $match: {
-          'data.eventId': eventId
-        }
-      },
-      {
-        $lookup: {
-          from: 'events',
-          localField: 'data.eventId',
-          foreignField: '_id',
-          as: 'eventDetails'
-        }
-      },
-      {
-        $unwind: '$eventDetails'
-      },
-      {
-        $addFields: {
-          eventName: '$eventDetails.name',
-        }
-      },
-      {
-        $project: {
-          eventDetails: 0,
-        }
-      }]).exec();
+      const eventDoc = await event.findById(eventId)
+      const participants = await ManualPayment.find({ 'data.eventId': eventId })
     
-      console.log(result);
       successHandler(new SuccessResponse("Query successful!"), res, { 
-        participants: result, 
-        number: result.length 
+        eventName: eventDoc._doc.name,
+        participants, 
+        number: participants.length 
       });
       return;
     } catch (e) {
@@ -333,18 +308,27 @@ const verify = asyncHandler(async(req, res, next) => {
   } else {
     try {
       const userDoc = await User.findOne({ ticketCode })
-      const regex = new RegExp('^aurora-purchase_individual-[a-zA-Z0-9]{8}$');
-      const paymentDoc = await ManualPayment.findOne({ receiptId: regex, ticketCode })
-      const {__v, createdAt, updatedAt, _id, ...otherFields} = paymentDoc._doc;
+      const paymentDoc = await ManualPayment.find({ ticketCode })
 
       if (userDoc || paymentDoc) {
-        const data = userDoc ? userDoc : paymentDoc;
-        const {__v, createdAt, updatedAt, _id, ...otherFields} = data._doc;
-        successHandler(new SuccessResponse("User Found!"), res, otherFields)
+        if (userDoc) {
+          const data = userDoc ? userDoc : paymentDoc;
+          const {password, __v, createdAt, updatedAt, _id, ...otherFields} = data._doc;
+          successHandler(new SuccessResponse("User Found!"), res, { data: otherFields })
+        } else {
+          const data = [];
+          paymentDoc.forEach(async (payment) => {
+            const {__v, createdAt, updatedAt, _id, ...otherFields} = payment._doc;
+            data.push(otherFields)
+          })
+          successHandler(new SuccessResponse("User Found!"), res, { data })
+        }
       } else {
+        console.log(userDoc, paymentDoc)
         next(new NotFoundError("User with corresponding ticket code could not be found"))
       }
     } catch (error) {
+      console.error(error)
       next(new ServerError("Ticket could not be verified"))
     }
   }
