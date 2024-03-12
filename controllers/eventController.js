@@ -17,6 +17,7 @@ const emailController = require("./emailController")
 const { User, Group } = require("../models/userModel");
 const { PhysicalUser } = require("../models/physicalUserModel");
 const Receipt = require("../models/paymentReceipt");
+const ManualPayment = require("../models/manualPayment");
 const event = require("../models/event")
 
 // Import environment variables
@@ -257,6 +258,52 @@ const getParticipants = asyncHandler(async (req, res, next) => {
     }
 })
 
+const getParticipantsv2 = asyncHandler(async(req, res, next) => {
+  const {eventId} = req.body;
+  if (!eventId) { next(new UserError("Malformed Request!")) }
+  else {
+    try {
+      const result = await ManualPayment.aggregate([
+      {
+        $match: {
+          'data.eventId': eventId
+        }
+      },
+      {
+        $lookup: {
+          from: 'events',
+          localField: 'data.eventId',
+          foreignField: '_id',
+          as: 'eventDetails'
+        }
+      },
+      {
+        $unwind: '$eventDetails'
+      },
+      {
+        $addFields: {
+          eventName: '$eventDetails.name',
+        }
+      },
+      {
+        $project: {
+          eventDetails: 0,
+        }
+      }]).exec();
+    
+      console.log(result);
+      successHandler(new SuccessResponse("Query successful!"), res, { 
+        participants: result, 
+        number: result.length 
+      });
+      return;
+    } catch (e) {
+      console.error(e);
+      next(new ServerError(e.message));
+    }
+  }
+})
+
 const getReceipt = asyncHandler(async(req, res, next) => {
   const { receiptId } = req.query
 
@@ -286,8 +333,13 @@ const verify = asyncHandler(async(req, res, next) => {
   } else {
     try {
       const userDoc = await User.findOne({ ticketCode })
-      if (userDoc) {
-        const {password, __v, createdAt, updatedAt, _id, ...otherFields} = userDoc._doc;
+      const regex = new RegExp('^aurora-purchase_individual-[a-zA-Z0-9]{8}$');
+      const paymentDoc = await ManualPayment.findOne({ receiptId: regex, ticketCode })
+      const {__v, createdAt, updatedAt, _id, ...otherFields} = paymentDoc._doc;
+
+      if (userDoc || paymentDoc) {
+        const data = userDoc ? userDoc : paymentDoc;
+        const {__v, createdAt, updatedAt, _id, ...otherFields} = data._doc;
         successHandler(new SuccessResponse("User Found!"), res, otherFields)
       } else {
         next(new NotFoundError("User with corresponding ticket code could not be found"))
@@ -367,6 +419,7 @@ const hasAttended = asyncHandler(async(req, res, next) => {
 module.exports = {
   sendQR,
   getParticipants,
+  getParticipantsv2,
   getReceipt,
   addIndividual, 
   addGroup, 

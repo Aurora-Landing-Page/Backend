@@ -13,6 +13,7 @@ const { requireAdmin } = require("../middlewares/requireAuth")
 router.post("/addGroup", requireAdmin, eventController.addGroup);
 router.post("/addIndividual", requireAdmin, eventController.addIndividual);
 router.get("/getParticipants", requireAdmin, eventController.getParticipants);
+router.get("/getParticipantsv2", requireAdmin, eventController.getParticipantsv2);
 router.get("/getAllCas", requireAdmin, userController.getAllCas);
 router.get("/getReceipt", requireAdmin, eventController.getReceipt);
 router.post("/attended", requireAdmin, eventController.hasAttended);
