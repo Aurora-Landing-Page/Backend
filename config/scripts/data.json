@@ -1,0 +1,94 @@
+{
+    "title": "OK",
+    "message": "Query successful",
+    "unapprovedPayments": [
+      {
+        "_id": "65e0912e95fb6dc304db9395",
+        "receiptId": "aurora-participate_group-UAVYYKWI",
+        "ticketCode": "E91BCW",
+        "amount": 198,
+        "imageUrl": "https://res.cloudinary.com/dgbkbnjlw/image/upload/v1709216050/i40x8yog72ukoup2yahk.png",
+        "data": {
+          "type": "participate_group",
+          "groupName": "Royal Challengers Gwalior",
+          "ticketCode": "E91BCW",
+          "members": [
+            {
+              "name": "Kush",
+              "email": "nilanjanbmitra@gmail.com",
+              "phone": 8487904069
+            },
+            {
+              "name": "Lovish Dak",
+              "email": "nilanjanbmitra@gmail.com",
+              "phone": 8290484234
+            }
+          ],
+          "eventId": "65b6a707f9f62a745ca7dbe9"
+        },
+        "approved": false,
+        "denied": false,
+        "createdAt": "2024-02-29T14:14:06.045Z",
+        "updatedAt": "2024-02-29T14:14:11.327Z",
+        "__v": 0
+      },
+      {
+        "_id": "65e5ace300fb21497819af5b",
+        "receiptId": "aurora-purchase_individual-7H9ZT2U2",
+        "ticketCode": "Q8G0H6",
+        "amount": 1649,
+        "imageUrl": "https://res.cloudinary.com/dgbkbnjlw/image/upload/v1709550823/gokqumnl1pfp7emzidav.jpg",
+        "data": {
+          "type": "purchase_individual",
+          "accomodation": true,
+          "ticketCode": "Q8G0H6",
+          "purchasedTickets": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "members": [
+            {
+              "name": "Abhishek Singh",
+              "email": "nilanjanbmitra@gmail.com",
+              "phone": 7898649904
+            }
+          ]
+        },
+        "approved": false,
+        "denied": false,
+        "createdAt": "2024-03-04T11:13:39.846Z",
+        "updatedAt": "2024-03-04T11:13:44.308Z",
+        "__v": 0
+      },
+      {
+        "_id": "65e5e78900fb21497819b01f",
+        "receiptId": "aurora-participate_group-0P97JB0S",
+        "ticketCode": "KJLL1P",
+        "amount": 99,
+        "imageUrl": "https://res.cloudinary.com/dgbkbnjlw/image/upload/v1709565836/g6qkmddrp3dlgg8kmkwm.png",
+        "data": {
+          "type": "participate_group",
+          "groupName": "Gagan",
+          "ticketCode": "KJLL1P",
+          "members": [
+            {
+              "name": "Gagan",
+              "email": "nilanjanbmitra@gmail.com",
+              "phone": 9669410883
+            }
+          ],
+          "eventId": "65b7c894bd81c5ace666e102"
+        },
+        "approved": false,
+        "denied": false,
+        "createdAt": "2024-03-04T15:23:53.373Z",
+        "updatedAt": "2024-03-04T15:23:56.908Z",
+        "__v": 0
+      }
+    ],
+    "number": 3
+  }
