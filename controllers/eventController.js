@@ -313,7 +313,6 @@ const verify = asyncHandler(async(req, res, next) => {
       let pronite = false;
 
       if (payments.length != 0) {
-        console.log(payments)
         for (const payment of payments) {
           if (payment._doc.data.type == "purchase_individual" || payment._doc.data.type == "purchase_group") { 
             pronite = true; 
