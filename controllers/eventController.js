@@ -307,24 +307,28 @@ const verify = asyncHandler(async(req, res, next) => {
     next(new UserError("Invalid query"))
   } else {
     try {
-      const userDoc = await User.findOne({ ticketCode })
-      const paymentDoc = await ManualPayment.find({ ticketCode })
+      const payments = await ManualPayment.find({ ticketCode })
+      let events = [];
+      let data = [];
+      let pronite = false;
 
-      if (userDoc || paymentDoc) {
-        if (userDoc) {
-          const data = userDoc ? userDoc : paymentDoc;
-          const {password, __v, createdAt, updatedAt, _id, ...otherFields} = data._doc;
-          successHandler(new SuccessResponse("User Found!"), res, { data: otherFields })
-        } else {
-          const data = [];
-          paymentDoc.forEach(async (payment) => {
+      if (payments.length != 0) {
+        console.log(payments)
+        for (const payment of payments) {
+          if (payment._doc.data.type == "purchase_individual" || payment._doc.data.type == "purchase_group") { 
+            pronite = true; 
             const {__v, createdAt, updatedAt, _id, ...otherFields} = payment._doc;
-            data.push(otherFields)
-          })
-          successHandler(new SuccessResponse("User Found!"), res, { data })
+            data.push(otherFields);
+          } else if (payment._doc.data.type == "participate_individual" || payment._doc.data.type == "participate_group") {
+            const eventDoc = await event.findById(payment.data.eventId);
+            const name = eventDoc._doc.name;
+            events.push(name);
+            const {__v, createdAt, updatedAt, _id, ...otherFields} = payment._doc;
+            data.push(otherFields);
+          }
         }
+        successHandler(new SuccessResponse("User Found!"), res, { pronite, events, data })
       } else {
-        console.log(userDoc, paymentDoc)
         next(new NotFoundError("User with corresponding ticket code could not be found"))
       }
     } catch (error) {
