@@ -315,13 +315,13 @@ const verify = asyncHandler(async(req, res, next) => {
       if (payments.length != 0) {
         for (const payment of payments) {
           if (payment._doc.data.type == "purchase_individual" || payment._doc.data.type == "purchase_group") { 
-            pronite = true; 
+            if (payment._doc.approved) { pronite = true; } 
             const {__v, createdAt, updatedAt, _id, ...otherFields} = payment._doc;
             data.push(otherFields);
           } else if (payment._doc.data.type == "participate_individual" || payment._doc.data.type == "participate_group") {
             const eventDoc = await event.findById(payment.data.eventId);
             const name = eventDoc._doc.name;
-            events.push(name);
+            if (payment._doc.approved) { events.push(name); }
             const {__v, createdAt, updatedAt, _id, ...otherFields} = payment._doc;
             data.push(otherFields);
           }
